@@ -1,53 +1,42 @@
 // src/utils/jwt.ts
-import jwt, { JwtPayload as DefaultJwtPayload } from 'jsonwebtoken';
-import { IUserModel } from '../infrastructure/model/user.model'; 
-import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv'
+dotenv.config()
 
-dotenv.config();
 
-// Custom payload type for our JWTs
-interface JwtPayload extends DefaultJwtPayload {
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET as string;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET as string;
+
+interface JwtPayload {
   id: string;
   email: string;
+  role: string;
 }
 
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 
-// Generate Access Token
-export const generateAccessToken = (user: IUserModel): string => {
-  return jwt.sign(
-    { id: user.id, email: user.email }, 
-    ACCESS_TOKEN_SECRET, 
-    { expiresIn: '1h' }
-  );
+export interface IUserPayload {
+  id: string;
+  email: string;
+  role: string;
+}
+
+// Access token
+export const generateAccessToken = (payload: JwtPayload) => {
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 };
 
-// Generate Refresh Token
-export const generateRefreshToken = (user: IUserModel): string => {
-  return jwt.sign(
-    { id: user.id, email: user.email }, 
-    REFRESH_TOKEN_SECRET, 
-    { expiresIn: '7d' }
-  );
+// Refresh token
+export const generateRefreshToken = (payload: JwtPayload) => {
+  return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 };
 
-// Verify Access Token with error handling
-export const verifyAccessToken = (token: string): JwtPayload | null => {
-  try {
-    return jwt.verify(token, ACCESS_TOKEN_SECRET) as JwtPayload;
-  } catch (error) {
-    console.error('Invalid access token:', error);
-    return null;
-  }
+// Verify access token
+export const verifyAccessToken = (token: string): IUserPayload  => {
+  const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as IUserPayload;
+  return decoded;
 };
 
-// Verify Refresh Token with error handling
-export const verifyRefreshToken = (token: string): JwtPayload | null => {
-  try {
-    return jwt.verify(token, REFRESH_TOKEN_SECRET) as JwtPayload;
-  } catch (error) {
-    console.error('Invalid refresh token:', error);
-    return null;
-  }
+// Verify refresh token
+export const verifyRefreshToken = (token: string): JwtPayload => {
+  return jwt.verify(token, REFRESH_TOKEN_SECRET) as JwtPayload;
 };

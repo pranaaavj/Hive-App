@@ -1,25 +1,32 @@
-// src/infrastructure/models/user.model.ts
 import { Schema, model, Document } from 'mongoose';
-import bcrypt from 'bcrypt';
 
 export interface IUserModel extends Document {
   name: string;
   email: string;
   password: string;
+  isVerified: boolean;
+  verificationToken?: string;
+  verificationTokenExpires?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  role: string;
   createdAt: Date;
-  isVerified: boolean,
-  role:string
+  updatedAt: Date;
 }
 
 const userSchema = new Schema<IUserModel>({
-  name: { type: String, required: true,unique:true,index:true},
-  email: { type: String, required: true, unique: true , index:true },
+  name: { type: String, required: true, unique: true, index: true },
+  email: { type: String, required: true, unique: true, index: true, lowercase: true, trim: true },
   password: { type: String, required: true },
-  role: { type: String , default:'user'},
+  role: { type: String, default: 'user' },
   isVerified: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
+  verificationToken: { type: String },
+  verificationTokenExpires: { type: Date }, 
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date }
+}, {
+  timestamps: true
 });
-
 
 const User = model<IUserModel>('User', userSchema);
 

@@ -10,6 +10,9 @@ export interface IUserDTO {
     name: string;
     email: string;
     password: string;
+    verificationToken?: string;
+    verificationTokenExpires?: Date;
+    isVerified?: boolean;
   }
   
   export interface ILoginUserDTO {
