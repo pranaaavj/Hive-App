@@ -1,125 +1,123 @@
-import React, { useState } from "react";
-import { RegisterFormData } from "@/types/auth";
 import { InputField } from "@/components/InputField";
 import { PasswordStrength } from "@/components/PasswordStrength";
-import {User, Lock, EyeOff, Eye, Mail} from "lucide-react"
-import {Link} from "react-router-dom"
+import { LoginFormData } from "@/types/auth";
+import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import React,{ useState } from "react";
+import { Link } from 'react-router-dom';
 
-export const RegisterPage: React.FC = () => {
-  const [formData, setFormData] = useState<RegisterFormData>({
-    username: "",
-    email: "",
+export const LoginPage: React.FC = () => {
+  const [formData, setFormData] = useState<LoginFormData>({
+    identifier: "",
     password: "",
   });
-  const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
+  const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const validateField = (
-    name: keyof RegisterFormData,
-    value: string
-  ): string => {
+  const validateField = (name: keyof LoginFormData, value: string): string => {
     switch (name) {
-      case "username":
+      case "identifier": {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
         if (!value.trim()) {
           return "Email or username is required";
         }
-        return value.length < 3 ? "Username must be 3 characters" : "";
-      case "email":
-        return !/^\S+@\S+\.\S+$/.test(value)
-          ? "Please enter a valid email"
-          : "";
-      case "password":
-
-      if (!value) {
-        return "Password is required";
+  
+        if (emailRegex.test(value)) {
+          if (value.length > 100) {
+            return "Email is too long";
+          }
+          return "";
+        } else {
+          if (value.length < 3) {
+            return "Username must be at least 3 characters";
+          }
+          if (!/^[a-zA-Z0-9._-]+$/.test(value)) {
+            return "Username can only contain letters, numbers, dots, underscores, and hyphens";
+          }
+          return "";
+        }
       }
-        return value.length < 8 ? "Password must be atleast 8 characters" : "";
+  
+      case "password": {
+        if (!value) {
+          return "Password is required";
+        }
+        return "";
+      }
       default:
         return "";
     }
   };
+  
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
+    const {name, value} = e.target
+    setFormData({...formData, [name]: value})
     if (touched[name]) {
-      const error = validateField(name as keyof RegisterFormData, value);
-      setErrors({ ...errors, [name]: error });
-    }
-  };
+    const error = validateField(name as keyof LoginFormData, value);
+    setErrors({ ...errors, [name]: error });
+  }
+  }
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setTouched({ ...touched, [name]: true });
     
-    const error = validateField(name as keyof RegisterFormData, value);
+    const error = validateField(name as keyof LoginFormData, value);
     setErrors({ ...errors, [name]: error });
 
   };
-
-  const handleSubmit= (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-      const newErrors: Partial<RegisterFormData> = {};
-  let hasErrors = false;
+    const newErrors: Partial<LoginFormData> = {};
+let hasErrors = false;
 
+(Object.keys(formData) as (keyof LoginFormData)[]).forEach((key) => {
+  const value = formData[key]; 
+  const error = validateField(key, value);
+  if (error) {
+    newErrors[key] = error;
+    hasErrors = true;
+  }
+});
 
-    (Object.keys(formData) as Array<keyof RegisterFormData>).forEach((key) => {
-      const error = validateField(key, formData[key] as string); // 👈 type assertion added
-      if (error) {
-        newErrors[key] = error;
-        hasErrors = true;
-      }
-    });
-  
-
-    setErrors(newErrors);
+setErrors(newErrors);
     setTouched({
-      username: true,
-      email: true,
+      identifier: true,
       password: true
     });
     
     if (!hasErrors) {
       console.log('Form submitted successfully', formData);
     }
+
+
   }
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
- 
+
   return (
     <div className="flex-col flex max-h-screen w-full items-center justify-center">
-      <div className="w-[350px] bg-white rounded-[2px] border-gray-400  border space-y-8 mt-8 p-8">
+      <div className="w-[350px] bg-white rounded-[2px] border-gray-400 border space-y-8 mt-8 p-8">
         <div className="text-center flex items-center flex-col">
         <img className="w-30" src="/logo/hive-logo.png" alt="Hive Logo" />
-          <p className="mt-3 font-bold text-gray-600">Connect with friends and discover moments you love.</p>
         </div>
 
-       
+        
           <form onSubmit={handleSubmit} className="space-y-3">
             <InputField
               type="text"
-              name="username"
-              value={formData.username}
+              name="identifier"
+              value={formData.identifier}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="Username"
+              placeholder="Username or Email"
               icon={<User size={18} className="text-gray-400" />}
-              error={touched.username ? errors.username : undefined}
-            />
-
-            <InputField
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              placeholder="Email address"
-              icon={<Mail size={18} className="text-gray-400" />}
-              error={touched.email ? errors.email : undefined}
+              error={touched.identifier ? errors.identifier : undefined}
             />
 
             <div className="space-y-2">
@@ -144,9 +142,9 @@ export const RegisterPage: React.FC = () => {
                 }
               />
               
-              {formData.password && (
+              {/* {formData.password && (
                 <PasswordStrength password={formData.password} />
-              )}
+              )} */}
             </div>
 
             <div>
@@ -154,21 +152,24 @@ export const RegisterPage: React.FC = () => {
                 type="submit"
                 className="group relative flex w-full justify-center rounded-md bg-black py-3 px-4 font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 ease-in-out"
               >
-                Register
+                Login
               </button>
             </div>
+
+            <hr className="my-4 border-gray-300" />
+            
+              <Link className="text-gray-500" to="">Forgot your password ?</Link>
           </form>
 
-          
+         
         </div>
         <div className="w-[350px] bg-white rounded-[2px] border-gray-400 border space-y-8 mt-3 p-4">
           <div>
-            <p>Already have an account ?</p>
-            <Link className="text-blue-500 font-bold hover:underline" to="/login">Login</Link>
+            <p>Don' have an account ?</p>
+            <Link className="text-blue-500 font-bold hover:underline" to="/register">Sign up</Link>
           </div>
 
         </div>
       </div>
-    
-  );
+  )
 };
