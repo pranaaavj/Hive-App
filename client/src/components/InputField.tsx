@@ -24,7 +24,7 @@ export const InputField: React.FC<InputFieldProps> = ({
 }) => {
     return (
         <div className="space-y-2">
-        <div className={`relative rounded-md shadow-sm ${error ? 'ring-1 ring-red-500' : ''}`}>
+        <div className={`relative  ${error ? 'ring-1 ring-red-500' : ''}`}>
           {icon && (
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               {icon}
@@ -38,7 +38,7 @@ export const InputField: React.FC<InputFieldProps> = ({
             value={value}
             onChange={onChange}
             onBlur={onBlur}
-            className={`block w-full rounded-md border-0 py-3 ${
+            className={`block w-full border-gray-400 border py-2 rounded-[2px] ${
               icon ? 'pl-10' : 'pl-4'
             } ${
               suffix ? 'pr-10' : 'pr-4'
@@ -60,7 +60,7 @@ export const InputField: React.FC<InputFieldProps> = ({
         </div>
         
         {error && (
-          <p className="text-sm text-red-600" id={`${name}-error`} role="alert">
+          <p className="text-[12px] text-left text-red-600" id={`${name}-error`} role="alert">
             {error}
           </p>
         )}

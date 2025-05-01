@@ -7,7 +7,7 @@ interface EmailOptions {
   token: string;
 }
 export const sendEmail = async ({ email, token }: EmailOptions) => {
-  const verificationLink = `${process.env.CLIENT_URL}/verify-email/${token}`;
+  const verificationLink = `http://localhost:5001/api/user/verify-email/${token}`;
   const msg = {
     to: email,
     from: process.env.SENDER_EMAIL as string,
