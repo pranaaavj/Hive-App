@@ -4,6 +4,8 @@ import { InputField } from "@/components/InputField";
 import { PasswordStrength } from "@/components/PasswordStrength";
 import {User, Lock, EyeOff, Eye, Mail} from "lucide-react"
 import {Link} from "react-router-dom"
+import { useRegisterMutation } from "@/services/authApi";
+
 
 export const RegisterPage: React.FC = () => {
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -14,6 +16,7 @@ export const RegisterPage: React.FC = () => {
   const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [register,{isLoading}] = useRegisterMutation()
 
   const validateField = (
     name: keyof RegisterFormData,
@@ -58,7 +61,7 @@ export const RegisterPage: React.FC = () => {
 
   };
 
-  const handleSubmit= (e: React.FormEvent) => {
+  const handleSubmit= async(e: React.FormEvent) => {
     e.preventDefault()
 
       const newErrors: Partial<RegisterFormData> = {};
@@ -82,7 +85,12 @@ export const RegisterPage: React.FC = () => {
     });
     
     if (!hasErrors) {
-      console.log('Form submitted successfully', formData);
+      try {
+        console.log(formData,'formdat from register')
+        await register(formData).unwrap()
+      } catch (error) {
+        setErrors({ email: 'Registration failed. Try again.' });
+      }
     }
   }
 
@@ -154,7 +162,7 @@ export const RegisterPage: React.FC = () => {
                 type="submit"
                 className="group relative flex w-full justify-center rounded-md bg-black py-3 px-4 font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 ease-in-out"
               >
-                Register
+                 {isLoading ? 'Registering...' : 'Register'}
               </button>
             </div>
           </form>
