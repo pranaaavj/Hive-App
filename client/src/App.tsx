@@ -4,6 +4,7 @@ import { RegisterPage } from './pages/user/RegisterPage'
 import { LoginPage } from './pages/user/LoginPage'
 import { HomePage } from './pages/user/HomePage'
 import { ResetPasswordPage } from './pages/user/ResetPassword'
+import { ForgetPasswordPage } from './pages/user/ForgetPassword'
 function App() {
 
   return (
@@ -12,6 +13,7 @@ function App() {
       <Route path='/login' element={<LoginPage/>} />
       <Route path='/home' element={<HomePage/>} />
       <Route path='/reset-password/:token' element={<ResetPasswordPage/>} />
+      <Route path='/forget-password' element={<ForgetPasswordPage/>} />
     </Routes>
   )
 }

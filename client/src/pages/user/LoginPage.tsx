@@ -163,7 +163,7 @@ export const LoginPage: React.FC = () => {
 
           <hr className="my-4 border-gray-300" />
 
-          <Link className="text-gray-500" to="">
+          <Link className="text-gray-500" to="/forget-password">
             Forgot your password ?
           </Link>
         </form>
