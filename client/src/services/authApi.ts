@@ -20,9 +20,17 @@ export const authApi = createApi({
                 method:'POST',
                 body:registerData
             })
+        }),
+
+        resetPassword:builder.mutation<void,{token:string,password:string}>({
+            query:({token , password})=>({
+                url : `user/reset-password/${token}`,
+                method:'POST',
+                body:{password}
+            })
         })
     })
 })
 
 
-export const {useLoginMutation,useRegisterMutation} = authApi
+export const {useLoginMutation,useRegisterMutation,useResetPasswordMutation} = authApi

@@ -8,3 +8,8 @@ export interface LoginFormData {
     identifier: string,
     password: string
 }
+
+export interface ResetPasswordFormData {
+    password: string;
+    confirmPassword: string;
+  }
