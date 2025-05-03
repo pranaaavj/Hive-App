@@ -1,13 +1,13 @@
 // domain/entities/user.entity.ts
 export interface IUserDTO {
     id: string;
-    name: string;
+    username: string;
     email: string;
     createdAt: Date;
   }
   
   export interface IRegisterUserDTO {
-    name: string;
+    username: string;
     email: string;
     password: string;
   }

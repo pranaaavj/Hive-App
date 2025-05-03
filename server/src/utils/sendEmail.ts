@@ -1,27 +1,56 @@
-import sgmail from '@sendgrid/mail';
-
-sgmail.setApiKey(process.env.SENDGRID_API_KEY as string);
+import nodemailer from 'nodemailer';
 
 interface EmailOptions {
-  email: string;
-  token: string;
+  to: string;
+  subject: string;
+  html: string;
 }
-export const sendEmail = async ({ email, token }: EmailOptions) => {
-  const verificationLink = `http://localhost:5001/api/user/verify-email/${token}`;
-  const msg = {
-    to: email,
-    from: process.env.SENDER_EMAIL as string,
-    subject: 'Verify Your Email' ,
-    html: `
-      <h2>Email Verification</h2>
-      <p>Click below to verify your email:</p>
-      <a href="${verificationLink}">${verificationLink}</a>
-    `,
-  };
 
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.SENDER_EMAIL,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+const sendEmail = async ({ to, subject, html }: EmailOptions): Promise<void> => {
+  const mailOptions = {
+    from: process.env.SENDER_EMAIL,
+    to,
+    subject,
+    html,
+  };
   try {
-    await sgmail.send(msg);
+    await transporter.sendMail(mailOptions);
+    console.log(`Email sent to ${to}`);
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Failed to send email:', error);
+    throw new Error('Failed to send email');
   }
+};
+
+export const sendVerificationEmail = async (
+  email: string,
+  token: string,
+  purpose: string,
+): Promise<void> => {
+  const link =
+    purpose == 'register'
+      ? `http://localhost:5001/api/user/verify-email/${token}`
+      : `http://localhost:5001/api/user/verify-forgot-email/${token}`;
+  const html = `
+  <h2>Email Verification</h2>
+  <p>Click the button below to verify your email:</p>
+  <a href="${link}">
+    <button style="padding:10px 20px;background-color:#007BFF;color:white;border:none;border-radius:4px;">Verify Email</button>
+  </a>
+`;
+
+  console.log(email, token);
+  await sendEmail({
+    to: email,
+    subject: 'Verify Your Email',
+    html,
+  });
 };
