@@ -15,4 +15,8 @@ export class UserRepository {
   async findUserById(id: string): Promise<IUserModel | null> {
     return await User.findById(id);
   }
+  async findUserByResetToken(token: string) {
+    return await User.findOne({resetPasswordToken:token });
+  }
+  
 }
