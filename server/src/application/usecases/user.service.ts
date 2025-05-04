@@ -99,13 +99,24 @@ async passwordResetEmail(email: string) : Promise<void> {
     await sendVerificationEmail(user.email, token, "forgot")
 
 }
-async forgotVerifyEmail(token: string):  Promise<string> {
-  console.log(token)
-  const {userId} = jwt.verify(token, process.env.EMAIL_SECRET!) as {userId: string}
-  const user = await userRepository.findUserById(userId);
-  if (!user) throw new Error('User not found');
+async forgotVerifyEmail(token: string): Promise<string> {
+  try {
+    const { userId } = jwt.verify(token, process.env.EMAIL_SECRET!) as { userId: string };
+    
+    const user = await userRepository.findUserById(userId);
+    if (!user) throw new Error('User not found');
 
-  return `${process.env.CLIENT_URL}/reset-password?token=${token}`
+    if (user.resetPasswordToken !== token) {
+      throw new Error('Invalid reset token');
+    }
+
+    return `${process.env.CLIENT_URL}/reset-password?token=${token}`;
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      throw new Error('Reset link expired. Please request a new one.');
+    }
+    throw new Error('Invalid reset link.');
+  }
 }
 async resetPassword(token: string, newPassword: string): Promise<void> {
   try {

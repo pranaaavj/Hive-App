@@ -2,7 +2,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../../application/usecases/user.service';
 
-
 const userService = new UserService();
 
 export class UserController {
@@ -23,6 +22,7 @@ export class UserController {
   async login(req: Request, res: Response): Promise<void> {
   try {
     const credentials = req.body;
+    console.log(credentials,'from the login')
     const { accessToken, refreshToken, user } = await userService.login(credentials);
 
     
@@ -89,9 +89,7 @@ async forgotVerifyEmail(req: Request, res: Response): Promise<void> {
   }
 }
 async resetPasword(req: Request, res: Response): Promise<void> {
-
   try {
-    
     const {token} = req.query
     const {password} = req.body
     await userService.resetPassword(token as string, password)
@@ -100,7 +98,6 @@ async resetPasword(req: Request, res: Response): Promise<void> {
     res.status(400).json({ error: error.message || "Failed to reset password." });
     
   }
-
   
 }
   

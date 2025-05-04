@@ -32,6 +32,7 @@ export const ForgetPasswordPage: React.FC = () => {
       setSuccessMessage("Reset link sent! Check your email.");
       setError(null);
     } catch (err: any) {
+      setSuccessMessage(null);
       setError(err?.data?.message || "Failed to send reset link. Try again.");
     }
   };
@@ -49,17 +50,25 @@ export const ForgetPasswordPage: React.FC = () => {
             type="email"
             name="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setSuccessMessage(null); // Clear on input change
+            }}
             onBlur={() => setTouched(true)}
             placeholder="Enter your email"
             icon={<Mail size={18} className="text-gray-400" />}
             error={touched ? error || undefined : undefined}
+            aria-label="Email for password reset"
           />
 
           <div>
             <button
               type="submit"
-              className="group relative flex w-full justify-center rounded-md bg-black py-3 px-4 font-medium text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-200 ease-in-out"
+              disabled={isLoading}
+              aria-label="Send password reset email"
+              className={`group relative flex w-full justify-center rounded-md bg-black py-3 px-4 font-medium text-white transition-all duration-200 ease-in-out ${
+                isLoading ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-800"
+              }`}
             >
               {isLoading ? "Sending..." : "Send Reset Link"}
             </button>
