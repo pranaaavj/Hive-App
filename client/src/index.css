@@ -1,7 +1,20 @@
+
+html, body, #root, #root > * {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  overflow-x: hidden;
+  max-width: 100% !important; /* Prevent overflow */
+  position: relative;
+}
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+
+
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -115,6 +128,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground m-0 p-0 w-full h-full;
   }
 }
