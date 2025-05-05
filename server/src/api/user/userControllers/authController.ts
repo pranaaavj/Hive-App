@@ -1,7 +1,7 @@
 // import jwt from "jsonwebtoken"
 import { Request, Response } from 'express';
-import { UserService } from '../../application/usecases/user.service';
-import { ApiError } from '../../utils/apiError';
+import { UserService } from '../../../application/usecases/user.service';
+import { ApiError } from '../../../utils/apiError';
 
 const userService = new UserService();
 
