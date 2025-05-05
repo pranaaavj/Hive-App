@@ -2,25 +2,25 @@ import {createSlice,PayloadAction} from "@reduxjs/toolkit"
 
 interface UserState {
     user: any | null,
-    accessToken: string | null
+  
 }
 
 const initialState: UserState = {
     user: null,
-    accessToken: null
+   
 }
 
 const userSlice = createSlice({
     name: "user",
     initialState,
     reducers: {
-        setUser: (state, action: PayloadAction<{ user: any; accessToken: string }>) => {
+        setUser: (state, action: PayloadAction<{ user: any; }>) => {
             state.user = action.payload.user;
-            state.accessToken = action.payload.accessToken;
+            
           },
           logout: (state) => {
               state.user = null;
-              state.accessToken = null;
+                localStorage.removeItem('accessToken')
             },
           
     },

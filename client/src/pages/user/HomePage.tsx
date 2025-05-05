@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { CreatePostModal } from "./CreatePostModal"
 import {
   PlusCircle,
   Heart,
@@ -56,6 +57,7 @@ interface Post {
 }
 
 export function HomePage() {
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [stories, setStories] = useState<Story[]>([
     { id: 1, username: "yourstory", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: false },
     { id: 2, username: "jamesdoe", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
@@ -122,7 +124,7 @@ export function HomePage() {
      
     <SidebarProvider >
         {/* Enhanced Left Sidebar */}
-        <AppSidebar />
+        <AppSidebar onCreateClick ={()=>setIsModalOpen(true)}/>
 
         {/* Main Content - Fixed sizing */}
         <main className="flex-1 overflow-auto min-w-0">
@@ -263,6 +265,7 @@ export function HomePage() {
                 ))}
               </div>
             </div>
+            <CreatePostModal open={isModalOpen} setOpen={setIsModalOpen} />
           </div>
         </main>
 
@@ -276,7 +279,11 @@ export function HomePage() {
   )
 }
 
-function AppSidebar() {
+interface AppSidebarProps {
+  onCreateClick: () => void
+}
+
+function AppSidebar({onCreateClick}:AppSidebarProps) {
   return (
     <Sidebar  variant="sidebar" collapsible="icon" className="border-r  border-amber-200 bg-white w-64">
       <SidebarHeader className="p-4">
@@ -338,7 +345,7 @@ function AppSidebar() {
           </SidebarMenuItem>
 
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Create" className="py-3 text-sm">
+            <SidebarMenuButton asChild tooltip="Create" className="py-3 text-sm" onClick={onCreateClick}>
               <Link to="#" className="flex items-center gap-3 font-medium">
                 <PlusSquare className="h-5 w-5" />
                 <span>Create</span>

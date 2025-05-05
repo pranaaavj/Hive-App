@@ -97,7 +97,8 @@ export const LoginPage: React.FC = () => {
       try {
         const res = await login(formData).unwrap();
         
-        dispatch(setUser({user: res.user, accessToken: res.accessToken}))
+        dispatch(setUser({user: res.user}))
+        localStorage.setItem('accessToken',res.accessToken)
         navigate("/home")
     
       } catch (err: any) {

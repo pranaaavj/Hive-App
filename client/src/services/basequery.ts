@@ -5,8 +5,8 @@ import { setUser, logout } from "@/redux/slices/userSlice";
 const baseQuery = fetchBaseQuery({
     baseUrl: `${import.meta.env.VITE_BASE_URL}/api`,
     credentials: "include",
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).user.accessToken;
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem('accessToken')
       if (token) headers.set("authorization", `Bearer ${token}`);
       return headers;
     },
@@ -20,11 +20,12 @@ const baseQuery = fetchBaseQuery({
   
       if (refreshResult.data) {
         const { accessToken } = refreshResult.data as any;
-        api.dispatch(setUser({ accessToken, user: (api.getState() as RootState).user.user }));
-  
+        localStorage.setItem('accessToken',accessToken)
+        api.dispatch(setUser({  user: (api.getState() as RootState).user.user }));
         result = await baseQuery(args, api, extraOptions);
       } else {
         api.dispatch(logout());
+        localStorage.removeItem('accessToken')
       }
     }
   
