@@ -7,9 +7,19 @@ export class UserRepository {
     const user = new User(userData);
     return await user.save();
   }
-
   async findUserByEmail(email: string): Promise<IUserModel | null> {
-    return await User.findOne({ email });
+    return User.findOne({ email });
+  }
+
+  async findUserByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
+    let user = await User.findOne({email: identifier})
+    if(!user) {
+      user = await User.findOne({username: identifier})
+    }
+    return user
+  }
+  async findUserByUsername(username: string): Promise<IUserModel | null> {
+    return User.findOne({username})
   }
 
   async findUserById(id: string): Promise<IUserModel | null> {

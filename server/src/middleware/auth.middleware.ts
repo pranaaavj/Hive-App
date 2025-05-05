@@ -1,17 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+export const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.sendStatus(401);
+  if (!authHeader || !authHeader.startsWith("Bearer ")) return res.status(401).json({ error: "No token" });
 
-  const token = authHeader.split(' ')[1];
-
+  const token = authHeader.split(" ")[1];
   try {
-    const payload = jwt.verify(token, process.env.ACCESS_SECRET!);
-    (req as any).user = payload;
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!);
+    (req as any).user = decoded;
     next();
-  } catch {
-    res.sendStatus(403);
+  } catch (err) {
+    return res.status(403).json({ error: "Token expired or invalid" });
   }
 };
