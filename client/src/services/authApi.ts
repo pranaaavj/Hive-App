@@ -7,7 +7,7 @@ export const authApi = createApi({
     endpoints:(builder)=>({
         login:builder.mutation({
             query:(loginData)=>({
-                url:'user/login',
+                url:'auth/login',
                 method:'POST',
                 body:loginData
             })
@@ -15,7 +15,7 @@ export const authApi = createApi({
 
         register:builder.mutation({
             query:(registerData)=>({
-                url:'user/register',
+                url:'auth/register',
                 method:'POST',
                 body:registerData
             })
@@ -23,7 +23,7 @@ export const authApi = createApi({
 
         resetPassword: builder.mutation<void, { token: string; password: string }>({
             query: ({ token, password }) => ({
-              url: `user/reset-password?token=${token}`,
+              url: `auth/reset-password?token=${token}`,
               method: "POST",
               body: {  password },
             }),
@@ -31,7 +31,7 @@ export const authApi = createApi({
 
         forgetPassword:builder.mutation({
             query:({email})=>({
-                url:'user/forgot-password',
+                url:'auth/forgot-password',
                 method:'POST',
                 body:{email}
             })
