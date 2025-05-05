@@ -1,12 +1,16 @@
 import { InputField } from "@/components/InputField";
-import { PasswordStrength } from "@/components/PasswordStrength";
 import { LoginFormData } from "@/types/auth";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { useLoginMutation } from "@/services/authApi";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setUser } from "@/redux/slices/userSlice";
 
 export const LoginPage: React.FC = () => {
+
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
   const [formData, setFormData] = useState<LoginFormData>({
     identifier: "",
     password: "",
@@ -92,11 +96,12 @@ export const LoginPage: React.FC = () => {
     if (!hasErrors) {
       try {
         const res = await login(formData).unwrap();
-
-        console.log(res,'res from the login')
-        console.log("Login Successfull", res);
+        
+        dispatch(setUser({user: res.user, accessToken: res.accessToken}))
+        navigate("/home")
+    
       } catch (err: any) {
-        const message = err?.data?.message || "Login failed. Please try again.";
+        const message = err?.data?.error || "Login failed. Please try again.";
         setErrors({ identifier: message });
       }
     }
@@ -179,12 +184,12 @@ export const LoginPage: React.FC = () => {
           </Link>
         </div>
       </div>
-      {isError && (
+      {/* {isError && (
         <p className="text-red-500 text-sm">
           {(error as any)?.data?.message ||
             "An error occurred. Please try again."}
         </p>
-      )}
+      )} */}
     </div>
   );
 };

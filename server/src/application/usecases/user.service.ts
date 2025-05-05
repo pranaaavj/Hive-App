@@ -10,12 +10,14 @@ import {
   verifyRefreshToken,
 } from '../../utils/jwt';
 import { sendVerificationEmail } from '../../utils/sendEmail';
+import { ApiError } from '../../utils/apiError';
 
 const userRepository = new UserRepository();
 
 export class UserService {
   async register(userData: IRegisterUserDTO) {
     const existingUser = await userRepository.findUserByEmail(userData.email);
+    const userIdTaken = await userRepository.findUserByUsername(userData.username)
 
     if (existingUser?.isVerified == false) {
       const token = jwt.sign({ userId: existingUser._id }, process.env.EMAIL_SECRET!, {
@@ -26,8 +28,14 @@ export class UserService {
       return existingUser;
     }
 
-    if (existingUser) throw new Error('User already exists');
-
+    if (existingUser) {
+      throw new ApiError("Validation error", 409, { email: "Email already in use" });
+    }
+    
+    if (userIdTaken) {
+      throw new ApiError("Validation error", 409, { username: "Username already taken" });
+    }
+    
     const hashedPassword = await hashPassword(userData.password);
 
     const newUser = await userRepository.createUser({
@@ -46,17 +54,16 @@ export class UserService {
   }
 
   async login(credentials: ILoginUserDTO) {
-    const user = await userRepository.findUserByEmail(credentials.email);
-    if (!user) throw new Error('Invalid email or password');
-    console.log(user);
+    const user = await userRepository.findUserByEmailOrUsername(credentials.identifier);
+    if (!user) throw new ApiError("Username or email does not exist", 404)
 
     if(!user.isVerified) {
-       throw new Error("User Email not verified, Retry using register")
+       throw new ApiError("User email not verified, please register again", 403)
     }
 
     // Compare password
     const isPasswordValid = await comparePassword(credentials.password, user.password);
-    if (!isPasswordValid) throw new Error('Invalid email or password');
+    if (!isPasswordValid) throw new ApiError("Invalid Email or password", 401)
 
     // Generate JWT tokens
     const accessToken = generateAccessToken(user);
@@ -72,7 +79,6 @@ export class UserService {
       throw new Error('Invalid refresh token');
     }
 
-    // Generate new access token using id and email
     const newAccessToken = generateAccessToken({ id: payload.id, email: payload.email } as any);
     return newAccessToken;
   }
@@ -110,6 +116,7 @@ async forgotVerifyEmail(token: string): Promise<string> {
       throw new Error('Invalid reset token');
     }
 
+
     return `${process.env.CLIENT_URL}/reset-password?token=${token}`;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
@@ -127,6 +134,7 @@ async resetPassword(token: string, newPassword: string): Promise<void> {
     if (!user) throw new Error("User not found");
 
     user.password = await hashPassword(newPassword);
+    user.resetPasswordToken = undefined
     await user.save();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {

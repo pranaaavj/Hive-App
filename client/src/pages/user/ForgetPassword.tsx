@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Mail } from "lucide-react";
+import { ArrowBigLeftDash, Mail } from "lucide-react";
 import { InputField } from "@/components/InputField";
 import { useForgetPasswordMutation } from "@/services/authApi";
+import { Link } from "react-router-dom";
 
 export const ForgetPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -67,15 +68,31 @@ export const ForgetPasswordPage: React.FC = () => {
               disabled={isLoading}
               aria-label="Send password reset email"
               className={`group relative flex w-full justify-center rounded-md bg-black py-3 px-4 font-medium text-white transition-all duration-200 ease-in-out ${
-                isLoading ? "opacity-60 cursor-not-allowed" : "hover:bg-gray-800"
+                isLoading
+                  ? "opacity-60 cursor-not-allowed"
+                  : "hover:bg-gray-800"
               }`}
             >
               {isLoading ? "Sending..." : "Send Reset Link"}
             </button>
           </div>
 
-          {successMessage && <p className="text-green-500 text-sm">{successMessage}</p>}
+          {successMessage && (
+            <p className="text-green-500 text-sm">{successMessage}</p>
+          )}
         </form>
+      </div>
+      <div className="w-[350px] bg-white rounded-[2px] border-gray-400 border space-y-8 mt-3 p-4">
+        <div className="flex justify-center">
+          <Link
+            className="font-bold hover:underline flex items-center"
+            to="/login"
+          >
+            <ArrowBigLeftDash className="mr-2" />{" "}
+            {/* Adjust this for spacing */}
+            Go Back
+          </Link>
+        </div>
       </div>
     </div>
   );

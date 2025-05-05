@@ -82,14 +82,18 @@ export const RegisterPage: React.FC = () => {
     if (hasErrors) return;
 
     try {
+      console.log(formData)
       await register(formData).unwrap();
       // On success:
       setRegistrationSuccess(true);
       setFormData({ username: "", email: "", password: "" }); // Reset form
       setErrors({});
       setTouched({});
-    } catch {
-      setErrors({ email: "Registration failed. Please try again." });
+    } catch (err: any) {
+      const fieldErrors = err?.data?.fields;
+      if(fieldErrors) {
+        setErrors(fieldErrors)
+      } 
     }
   };
 

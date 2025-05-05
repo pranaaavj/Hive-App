@@ -14,8 +14,6 @@ html, body, #root, #root > * {
 
 @custom-variant dark (&:is(.dark *));
 
-
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -129,5 +127,14 @@ html, body, #root, #root > * {
   }
   body {
     @apply bg-background text-foreground m-0 p-0 w-full h-full;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

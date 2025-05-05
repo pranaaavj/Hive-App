@@ -13,7 +13,7 @@ export interface IUserDTO {
   }
   
   export interface ILoginUserDTO {
-    email: string;
+    identifier: string;
     password: string;
   }
 
