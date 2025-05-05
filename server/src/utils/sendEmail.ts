@@ -37,8 +37,8 @@ export const sendVerificationEmail = async (
 ): Promise<void> => {
   const link =
     purpose == 'register'
-      ? `http://localhost:5001/api/user/verify-email/${token}`
-      : `http://localhost:5001/api/user/verify-forgot-email/${token}`;
+      ? `http://localhost:5001/api/auth/verify-email/${token}`
+      : `http://localhost:5001/api/auth/verify-forgot-email/${token}`;
   const html = `
   <h2>Email Verification</h2>
   <p>Click the button below to verify your email:</p>

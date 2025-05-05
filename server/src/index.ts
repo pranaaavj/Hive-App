@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import userRoutes from './api/user/user.route';
+import userRouter from './api/user/userRoutes/routes';
 import { errorHandler } from './middleware/error.middleware';
 import { connectDB, disconnectDB } from './infrastructure/db/connect';
 
@@ -16,7 +16,7 @@ app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 const port = process.env.PORT || 5001
-app.use('/api/user', userRoutes);
+app.use('/api', userRouter);
 app.use(errorHandler);
 
 const startServer = async () => {
