@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { PostController } from "../userControllers/postController";
-import { verifyAccessToken } from "../../../middleware/auth.middleware";
+import { authMiddleware } from "../../../middleware/auth.middleware";
 import rateLimit from 'express-rate-limit'
 
 
@@ -13,13 +13,13 @@ export function setupPostRoutes(postController: PostController): Router {
       keyGenerator: (req: any) => req.user?.userId || req.ip,
     });
   
-    router.post('/', verifyAccessToken, createPostLimiter, postController.createPost);
+    router.post('/', authMiddleware, createPostLimiter, postController.createPost);
     router.get('/', postController.getAllPosts);
     router.get('/:id', postController.getPostById);
-    router.get('/user', verifyAccessToken, postController.getUserPosts);
-    router.delete('/:id', verifyAccessToken, postController.deletePost);
-    router.post('/:id/like', verifyAccessToken, postController.likePost);
-    router.post('/:id/unlike', verifyAccessToken, postController.unlikePost);
+    router.get('/user', authMiddleware, postController.getUserPosts);
+    router.delete('/:id', authMiddleware, postController.deletePost);
+    router.post('/:id/like', authMiddleware, postController.likePost);
+    router.post('/:id/unlike', authMiddleware, postController.unlikePost);
   
     return router;
   }

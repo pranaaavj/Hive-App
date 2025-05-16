@@ -1,20 +1,48 @@
-// domain/entities/user.entity.ts
-export interface IUserDTO {
-    id: string;
-    username: string;
-    email: string;
-    createdAt: Date;
-  }
-  
-  export interface IRegisterUserDTO {
-    username: string;
-    email: string;
-    password: string;
-  }
-  
-  export interface ILoginUserDTO {
-    identifier: string;
-    password: string;
+import { Types } from 'mongoose';
+
+export interface IUser {
+  id?: string;
+  username: string;
+  email: string;
+  password: string;
+  role: string;
+  isVerified: boolean;
+  resetPasswordToken?: string;
+  isDeleted: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export class User {
+  constructor(
+    public id: string,
+    public username: string,
+    public email: string,
+    public password: string,
+    public role: string,
+    public isVerified: boolean,
+    public resetPasswordToken: string | undefined,
+    public isDeleted: boolean,
+    public createdAt: Date,
+    public updatedAt: Date
+  ) {
+    if (!username || !email || !password) {
+      throw new Error('Username, email, and password are required');
+    }
   }
 
-  
+  static create(data: Partial<IUser>): User {
+    return new User(
+      data.id || new Types.ObjectId().toString(),
+      data.username!,
+      data.email!,
+      data.password!,
+      data.role || 'user',
+      data.isVerified || false,
+      data.resetPasswordToken,
+      data.isDeleted || false,
+      data.createdAt || new Date(),
+      data.updatedAt || new Date()
+    );
+  }
+}

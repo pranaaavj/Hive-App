@@ -1,9 +1,11 @@
-import { Router } from "express";
-import authRouter from "../userRoutes/authRoute"
-import postRouter from "../userRoutes/postRoute"
-const router = Router()
 
-router.use("/auth", authRouter)
-router.use("/post", postRouter)
+// import { Router } from 'express';
+// import { setupUserRoutes } from './authRoute'; 
+// import { UserController } from '../userControllers/authController'; 
 
-export default router
+// export function setupRoutes(userController: UserController): Router {
+//   const router = Router();
+//   router.use('/auth', setupUserRoutes(userController));
+
+//   return router;
+// }

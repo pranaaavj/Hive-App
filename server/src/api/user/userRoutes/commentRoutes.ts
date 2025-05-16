@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CommentController } from '../userControllers/commentController';
-import { verifyAccessToken } from '../../../middleware/auth.middleware';
+import { authMiddleware } from '../../../middleware/auth.middleware';
 import rateLimit from 'express-rate-limit';
 
 export function setupCommentRoutes(commentController: CommentController): Router {
@@ -12,10 +12,10 @@ export function setupCommentRoutes(commentController: CommentController): Router
     keyGenerator: (req: any) => req.user?.userId || req.ip,
   });
 
-  router.post('/', verifyAccessToken, commentLimiter, commentController.createComment);
+  router.post('/', authMiddleware, commentLimiter, commentController.createComment);
   router.get('/post/:postId', commentController.getCommentsByPostId);
   router.get('/replies/:commentId', commentController.getReplies);
-  router.delete('/:commentId', verifyAccessToken, commentController.deleteComment);
+  router.delete('/:commentId', authMiddleware, commentController.deleteComment);
 
   return router;
 }

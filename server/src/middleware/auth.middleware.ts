@@ -1,57 +1,34 @@
+
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { verifyAccessToken } from '../utils/jwt';
+import { RedisClient } from '../infrastructure/cache/redis';
+import { ApiError } from '../utils/apiError';
 
-// Define interface for JWT payload
-interface JwtPayload {
-  id: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
-
-// Define interface for request with user extension
 interface RequestWithUser extends Request {
-  user: {
-    userId: string;
-    email: string;
-  }
+  user?: { userId: string; email: string };
 }
 
-export const verifyAccessToken = (req: Request, res: Response, next: NextFunction): void => {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-     res.status(401).json({ error: "Unauthorized - No token provided" }); // More descriptive
-     return
-  }
-  
-  const token = authHeader.split(" ")[1];
-  
+export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload;
-    
-    // Validate the decoded payload
-    if (!decoded.id || !decoded.email) {
-       res.status(403).json({ error: "Invalid token payload" });
-       return
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      throw new ApiError('No token provided', 401);
     }
-    
-    (req as RequestWithUser).user = {
-      userId: decoded.id,
-      email: decoded.email
-    };
-    
+
+    const redis = new RedisClient();
+    const isBlacklisted = await redis.get(`blacklist:${token}`);
+    if (isBlacklisted) {
+      throw new ApiError('Token is invalid', 401);
+    }
+
+    const payload = verifyAccessToken(token);
+    if (!payload) {
+      throw new ApiError('Invalid token', 401);
+    }
+
+    (req as RequestWithUser).user = { userId: payload.id, email: payload.email };
     next();
-  } catch (err) {
-    // Differentiate between different types of errors
-    if (err instanceof jwt.TokenExpiredError) {
-       res.status(401).json({ error: "Token expired" });
-       return
-    } else if (err instanceof jwt.JsonWebTokenError) {
-       res.status(401).json({ error: "Invalid token" });
-       return
-    }
-     res.status(500).json({ error: "Authentication failed" });
-     return
+  } catch (error) {
+    next(error instanceof ApiError ? error : new ApiError('Authentication failed', 401));
   }
 };

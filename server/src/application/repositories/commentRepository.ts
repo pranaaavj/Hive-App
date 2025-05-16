@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import { IComment,Comment } from "../../domain/entities/commentEntity";
-import { ICommentModel,CommentModel} from "../../infrastructure/model/commentModel";
+import { IComment, Comment } from "../../domain/entities/commentEntity";
+import { ICommentModel, CommentModel } from "../../infrastructure/model/commentModel";
 import { RedisClient } from "../../infrastructure/cache/redis";
 
 export interface CommentRepository {
@@ -9,7 +9,7 @@ export interface CommentRepository {
     findReplies(parentCommentId: string, page: number, limit: number): Promise<ICommentModel[]>;
     findById(id: string): Promise<ICommentModel | null>;
     delete(id: string): Promise<ICommentModel | null>;
-  }
+}
 
 export class MongoCommentRepository implements CommentRepository {
   private redis: RedisClient;
@@ -31,7 +31,9 @@ export class MongoCommentRepository implements CommentRepository {
       updatedAt: comment.updatedAt,
     };
     const savedComment = await CommentModel.create(commentData);
-    await this.redis.client.del(`comments:${comment.postId}:page:*`);
+    if (this.redis.client) {
+      await this.redis.client.del(`comments:${comment.postId}:page:*`);
+    }
     return savedComment;
   }
 
@@ -52,7 +54,9 @@ export class MongoCommentRepository implements CommentRepository {
       .limit(limit)
       .populate('userId', 'username profilePicture');
 
-    await this.redis.setEx(cacheKey, JSON.stringify(comments), 60);
+    if (this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(comments), 60);
+    }
     return comments;
   }
 
@@ -72,7 +76,9 @@ export class MongoCommentRepository implements CommentRepository {
       .limit(limit)
       .populate('userId', 'username profilePicture');
 
-    await this.redis.setEx(cacheKey, JSON.stringify(replies), 60);
+    if (this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(replies), 60);
+    }
     return replies;
   }
 
@@ -89,7 +95,7 @@ export class MongoCommentRepository implements CommentRepository {
       { content: '[Deleted]', isDeleted: true },
       { new: true }
     );
-    if (comment) {
+    if (comment && this.redis.client) {
       await this.redis.client.del(`comments:${comment.postId}:page:*`);
     }
     return comment;

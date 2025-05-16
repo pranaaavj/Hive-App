@@ -21,7 +21,7 @@ const baseQuery = fetchBaseQuery({
       if (refreshResult.data) {
         const { accessToken } = refreshResult.data as any;
         localStorage.setItem('accessToken',accessToken)
-        api.dispatch(setUser({  user: (api.getState() as RootState).user.user }));
+        api.dispatch(setUser({  user: (api.getState() as RootState).user.user}));
         result = await baseQuery(args, api, extraOptions);
       } else {
         api.dispatch(logout());

@@ -1,8 +1,7 @@
-import { IPostModel,PostModel} from '../../infrastructure/model/postModel';
-import { IPost,Post } from '../../domain/entities/postEntity';
+import { IPostModel, PostModel } from '../../infrastructure/model/postModel';
+import { IPost, Post } from '../../domain/entities/postEntity';
 import { Types } from 'mongoose';
 import { RedisClient } from '../../infrastructure/cache/redis';
-
 
 export interface PostRepository {
   save(post: Post): Promise<IPostModel>;
@@ -14,7 +13,6 @@ export interface PostRepository {
   findByUserId(userId: string, page: number, limit: number): Promise<IPostModel[]>;
   updateCommentCount(postId: string, increment: number): Promise<void>;
 }
-
 
 export class MongoPostRepository implements PostRepository {
   private redis: RedisClient;
@@ -36,14 +34,18 @@ export class MongoPostRepository implements PostRepository {
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     };
+    
     const savedPost = await PostModel.create(postData);
-    await this.redis.client.del(`posts:page:*`);
+    if (this.redis.client) {
+      await this.redis.client.del(`posts:page:*`);
+    }
     return savedPost;
   }
 
   async findAll(page: number, limit: number): Promise<IPostModel[]> {
     const cacheKey = `posts:page:${page}:limit:${limit}`;
     const cached = await this.redis.get(cacheKey);
+
     if (cached) {
       return JSON.parse(cached);
     }
@@ -54,7 +56,9 @@ export class MongoPostRepository implements PostRepository {
       .limit(limit)
       .populate('userId', 'username profilePicture');
 
-    await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
+    if (this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
+    }
     return posts;
   }
 
@@ -70,7 +74,7 @@ export class MongoPostRepository implements PostRepository {
       'username profilePicture'
     );
 
-    if (post) {
+    if (post && this.redis.client) {
       await this.redis.setEx(cacheKey, JSON.stringify(post), 60);
     }
     return post;
@@ -82,7 +86,7 @@ export class MongoPostRepository implements PostRepository {
       { isDeleted: true, status: 'deleted' },
       { new: true }
     );
-    if (post) {
+    if (post && this.redis.client) {
       await this.redis.client.del(`post:${id}`);
       await this.redis.client.del(`posts:page:*`);
     }
@@ -95,7 +99,7 @@ export class MongoPostRepository implements PostRepository {
       { $addToSet: { likes: new Types.ObjectId(userId) }, $inc: { likeCount: 1 } },
       { new: true }
     ).populate('userId', 'username profilePicture');
-    if (post) {
+    if (post && this.redis.client) {
       await this.redis.setEx(`post:${postId}`, JSON.stringify(post), 60);
     }
     return post;
@@ -107,7 +111,7 @@ export class MongoPostRepository implements PostRepository {
       { $pull: { likes: new Types.ObjectId(userId) }, $inc: { likeCount: -1 } },
       { new: true }
     ).populate('userId', 'username profilePicture');
-    if (post) {
+    if (post && this.redis.client) {
       await this.redis.setEx(`post:${postId}`, JSON.stringify(post), 60);
     }
     return post;
@@ -130,7 +134,9 @@ export class MongoPostRepository implements PostRepository {
       .limit(limit)
       .populate('userId', 'username profilePicture');
 
-    await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
+    if (this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
+    }
     return posts;
   }
 
@@ -140,7 +146,7 @@ export class MongoPostRepository implements PostRepository {
       { $inc: { commentCount: increment } },
       { new: true }
     );
-    if (post) {
+    if (post && this.redis.client) {
       await this.redis.setEx(`post:${postId}`, JSON.stringify(post), 60);
     }
   }

@@ -1,32 +1,118 @@
-// src/app/repositories/user.repository.ts
-import User, { IUserModel } from '../../infrastructure/model/user.model'
-import { IRegisterUserDTO } from '../../domain/entities/user.entity'; 
+// src/application/repositories/user.repository.ts
+import { Types } from 'mongoose';
+import { IUser,User } from '../../domain/entities/user.entity'; 
+import { UserModel,IUserModel } from '../../infrastructure/model/user.model'; 
+import { RedisClient } from '../../infrastructure/cache/redis';
 
-export class UserRepository {
-  async createUser(userData: IRegisterUserDTO): Promise<IUserModel> {
-    const user = new User(userData);
-    return await user.save();
-  }
-  async findUserByEmail(email: string): Promise<IUserModel | null> {
-    return User.findOne({ email });
+export interface UserRepository {
+  createUser(user: User): Promise<IUserModel>;
+  findById(id: string): Promise<IUserModel | null>;
+  findByEmail(email: string): Promise<IUserModel | null>;
+  findByUsername(username: string): Promise<IUserModel | null>;
+  findByEmailOrUsername(identifier: string): Promise<IUserModel | null>;
+  findByResetToken(token: string): Promise<IUserModel | null>;
+  update(id: string, data: Partial<IUser>): Promise<IUserModel | null>;
+}
+
+export class MongoUserRepository implements UserRepository {
+  private redis: RedisClient;
+
+  constructor() {
+    this.redis = new RedisClient();
   }
 
-  async findUserByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
-    let user = await User.findOne({email: identifier})
-    if(!user) {
-      user = await User.findOne({username: identifier})
+  async createUser(user: User): Promise<IUserModel> {
+    const userData = {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      role: user.role,
+      isVerified: user.isVerified,
+      resetPasswordToken: user.resetPasswordToken,
+      isDeleted: user.isDeleted,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+    const savedUser = await UserModel.create(userData);
+    return savedUser;
+  }
+
+  async findById(id: string): Promise<IUserModel | null> {
+    const cacheKey = `user:${id}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
     }
-    return user
-  }
-  async findUserByUsername(username: string): Promise<IUserModel | null> {
-    return User.findOne({username})
+
+    const user = await UserModel.findOne({ _id: new Types.ObjectId(id), isDeleted: false });
+    if (user && this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
+    }
+    return user;
   }
 
-  async findUserById(id: string): Promise<IUserModel | null> {
-    return await User.findById(id);
+  async findByEmail(email: string): Promise<IUserModel | null> {
+    const cacheKey = `user:email:${email}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const user = await UserModel.findOne({ email, isDeleted: false });
+    if (user && this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
+    }
+    return user;
   }
-  async findUserByResetToken(token: string) {
-    return await User.findOne({resetPasswordToken:token });
+
+  async findByUsername(username: string): Promise<IUserModel | null> {
+    const cacheKey = `user:username:${username}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const user = await UserModel.findOne({ username, isDeleted: false });
+    if (user && this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
+    }
+    return user;
   }
-  
+
+  async findByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
+    const cacheKey = `user:identifier:${identifier}`;
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    let user = await UserModel.findOne({ email: identifier, isDeleted: false });
+    if (!user) {
+      user = await UserModel.findOne({ username: identifier, isDeleted: false });
+    }
+    if (user && this.redis.client) {
+      await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
+    }
+    return user;
+  }
+
+  async findByResetToken(token: string): Promise<IUserModel | null> {
+    return await UserModel.findOne({ resetPasswordToken: token, isDeleted: false });
+  }
+
+  async update(id: string, data: Partial<IUser>): Promise<IUserModel | null> {
+    const user = await UserModel.findByIdAndUpdate(
+      new Types.ObjectId(id),
+      { $set: data },
+      { new: true, runValidators: true }
+    );
+    if (user && this.redis.client) {
+      await this.redis.client.del(`user:${id}`);
+      await this.redis.client.del(`user:email:${user.email}`);
+      await this.redis.client.del(`user:username:${user.username}`);
+      await this.redis.client.del(`user:identifier:${user.email}`);
+      await this.redis.client.del(`user:identifier:${user.username}`);
+    }
+    return user;
+  }
 }
