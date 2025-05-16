@@ -19,7 +19,7 @@ export const generateAccessToken = (user: IUserModel): string => {
   return jwt.sign(
     { id: user.id, email: user.email }, 
     ACCESS_TOKEN_SECRET, 
-    { expiresIn: '1h' }
+    { expiresIn: 10 }
   );
 };
 
