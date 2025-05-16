@@ -1,28 +1,41 @@
-// src/infrastructure/models/user.model.ts
 import { Schema, model, Document } from 'mongoose';
-import bcrypt from 'bcrypt';
+import { comparePassword, hashPassword } from '../../utils/hash';
 
 export interface IUserModel extends Document {
   username: string;
   email: string;
   password: string;
+  role: string;
+  isVerified: boolean;
+  resetPasswordToken?: string;
+  isDeleted: boolean;
   createdAt: Date;
-  isVerified: boolean,
-  resetPasswordToken?: string,
-  role:string
+  updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-const userSchema = new Schema<IUserModel>({
-  username: { type: String, required: true,unique:true,index:true},
-  email: { type: String, required: true, unique: true , index:true },
-  password: { type: String, required: true },
-  role: { type: String , default:'user'},
-  isVerified: { type: Boolean, default: false },
-  resetPasswordToken: String,
-  createdAt: { type: Date, default: Date.now }
+const userSchema = new Schema<IUserModel>(
+  {
+    username: { type: String, required: true, unique: true, index: true },
+    email: { type: String, required: true, unique: true, index: true },
+    password: { type: String, required: true },
+    role: { type: String, default: 'user' },
+    isVerified: { type: Boolean, default: false },
+    resetPasswordToken: { type: String },
+    isDeleted: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
+
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await hashPassword(this.password);
+  }
+  next();
 });
 
+userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+  return await comparePassword(candidatePassword, this.password);
+};
 
-const User = model<IUserModel>('User', userSchema);
-
-export default User;
+export const UserModel = model<IUserModel>('User', userSchema);

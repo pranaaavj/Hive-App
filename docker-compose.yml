@@ -1,0 +1,87 @@
+
+
+services:
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: hive-app-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    networks:
+      - hive-network
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: hive-app-backend
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    env_file:
+      - ./server/.env
+    networks:
+      - hive-network
+    depends_on:
+      - redis
+      - mongo
+    restart: on-failure
+
+  mongo:
+    image: mongo
+    container_name: hive-app-mongo
+    ports:
+      - "27017:27017"
+    command: --replSet rs0 --bind_ip_all
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - hive-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+  mongo-init:
+    image: mongo
+    container_name: hive-app-mongo-init
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: >
+      mongosh --host mongo:27017 --eval '
+        rs.initiate({
+          _id: "rs0",
+          members: [{ _id: 0, host: "mongo:27017" }]
+        });
+      '
+    networks:
+      - hive-network
+
+  redis:
+    image: redis
+    container_name: hive-app-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - hive-network
+
+networks:
+  hive-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
