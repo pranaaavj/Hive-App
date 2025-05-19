@@ -1,15 +1,14 @@
-
 import { Request, Response, NextFunction } from 'express';
-import { UserService } from '../../../application/usecases/user.service'; 
-import { ApiError } from '../../../utils/apiError'; 
+import { UserService } from '../../../application/usecases/user.service';
+import { ApiError } from '../../../utils/apiError';
 
 export class UserController {
   constructor(private userService: UserService) {}
 
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
-    console.log('userService:', this.userService);
     try {
       const { username, email, password } = req.body;
+
       await this.userService.register({ username, email, password });
       res.status(201).json({
         success: true,
@@ -24,30 +23,29 @@ export class UserController {
     try {
       const { identifier, password } = req.body;
       const { accessToken, refreshToken, user } = await this.userService.login({ identifier, password });
-
+  
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict' as const,
+        sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-
+  
       res.status(200).json({
         success: true,
         message: 'User logged in successfully',
-        data: {
-          accessToken,
-          user: {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-          },
+        accessToken,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
         },
       });
     } catch (error) {
       next(error);
     }
   }
+  
 
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

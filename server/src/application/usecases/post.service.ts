@@ -30,9 +30,9 @@ export class PostService {
     }
   }
 
-  async getAllPosts(page: number = 0, limit: number = 10): Promise<IPostModel[]> {
+  async getAllPosts(userId:string): Promise<IPostModel[]> {
     try {
-      return await this.postRepository.findAll(page, limit);
+      return await this.postRepository.findAll(userId);
     } catch (error) {
       throw new ApiError('Error fetching posts', 500);
     }

@@ -1,4 +1,4 @@
-
+version: "3.9"  # optional but recommended
 
 services:
   frontend:
@@ -39,7 +39,7 @@ services:
     restart: on-failure
 
   mongo:
-    image: mongo
+    image: arm64v8/mongo:6.0
     container_name: hive-app-mongo
     ports:
       - "27017:27017"
@@ -56,7 +56,7 @@ services:
       start_period: 40s
 
   mongo-init:
-    image: mongo
+    image: arm64v8/mongo:6.0
     container_name: hive-app-mongo-init
     depends_on:
       mongo:

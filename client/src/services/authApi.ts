@@ -37,12 +37,31 @@ export const authApi = createApi({
       }),
     }),
     addPost: builder.mutation({
-      query: ({ images }) => ({
+      query: ({ images, caption }) => ({
         url: "post/add-post",
         method: "POST",
-        body: images,
+        body: {images, caption}
       }),
     }),
+    getUserPosts: builder.query({
+      query: () => ({
+        url: `post/user-posts`,
+        method: "GET",
+      })
+    }),
+    addProfilePicture: builder.mutation({
+      query: ({imageUrl}) => ({
+        url: "profile/profile-picture",
+        method: "POST",
+        body: {imageUrl}
+      })
+    }),
+    getProfileDetails: builder.query({
+      query: () => ({
+        url: "profile/profile-details",
+        method: "GET"
+      })
+    })
   }),
 });
 
@@ -51,5 +70,8 @@ export const {
   useRegisterMutation,
   useResetPasswordMutation,
   useForgetPasswordMutation,
-  useAddPostMutation
+  useAddPostMutation,
+  useGetUserPostsQuery,
+  useAddProfilePictureMutation,
+  useGetProfileDetailsQuery
 } = authApi;

@@ -13,6 +13,23 @@ export interface IUser {
   updatedAt?: Date;
 }
 
+export interface ProfileSummary {
+  _id: string;
+  username: string;
+  email: string;
+  role: string;
+  isVerified: boolean;
+  isDeleted: boolean;
+  profilePicture: string;
+  bio: string;
+  postsCount: number;
+  followersCount: number;
+  followingCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+
 export class User {
   constructor(
     public id: string,

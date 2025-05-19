@@ -13,3 +13,10 @@ export interface ResetPasswordFormData {
     password: string;
     confirmPassword: string;
   }
+
+export interface User {
+    id: string,
+    username: string,
+    email : string,
+
+}

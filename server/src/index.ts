@@ -6,21 +6,9 @@ import { createServer } from 'http';
 import { setupWebSocket } from './infrastructure/websocket/socket';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-// import { setupRoutes } from './api/user/userRoutes/routes'; 
-import { setupUserRoutes } from './api/user/userRoutes/authRoute';
-import { UserController } from './api/user/userControllers/authController'; 
-import { UserService } from './application/usecases/user.service'; 
-import { MongoUserRepository } from './application/repositories/user.repository'; 
-import { PostController } from './api/user/userControllers/postController';
-import { CommentController } from './api/user/userControllers/commentController';
-import { setupCommentRoutes } from './api/user/userRoutes/commentRoutes';
-import { setupPostRoutes } from './api/user/userRoutes/postRoute'; 
-import { PostService } from './application/usecases/post.service';
-import { CommentService } from './application/usecases/comment.service';
-import { MongoPostRepository } from './application/repositories/postRepository';
-import { MongoCommentRepository } from './application/repositories/commentRepository';
 import { errorHandler } from './middleware/error.middleware';
 import { connectDB, disconnectDB } from './infrastructure/db/connect';
+import { router } from './api/user/userRoutes/routes';
 
 
 dotenv.config();
@@ -39,24 +27,9 @@ app.use(cookieParser());
 console.log('heey')
 const port = process.env.PORT || 5001
 
-const userRepository = new MongoUserRepository();
-const userService = new UserService(userRepository);
-const userController = new UserController(userService);
+app.use("/api", router)
 
-const postRepository = new MongoPostRepository();
-const postService = new PostService(postRepository);
-const postController = new PostController(postService);
-
-const commentRepository = new MongoCommentRepository();
-const commentService = new CommentService(commentRepository, postRepository);
-const commentController = new CommentController(commentService);
-
-app.use('/api/auth', setupUserRoutes(userController));
-app.use('/posts', setupPostRoutes(postController));
-app.use('/comments', setupCommentRoutes(commentController));
-
-
-app.use(errorHandler);
+app.use(errorHandler)
 
 const startServer = async () => {
   try {
