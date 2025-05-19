@@ -17,7 +17,6 @@ export class ProfileService {
     }
     async profileDetails(userId: string) : Promise<ProfileSummary> {
         const user = await this.profileRepository.findById(userId)
-        console.log(user)
         if (!user) {
             throw new Error('User not found or could not update profile image');
           }

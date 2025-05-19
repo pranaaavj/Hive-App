@@ -34,7 +34,7 @@ export class MongoProfileRepository implements ProfileRepository {
     return updatedUser as User | null;
   }
   async findById(userId: string): Promise<ProfileSummary | null> {
-    const cacheKey = `user:${userId}`;
+    const cacheKey = `user:summary:${userId}`;
     const cached = await this.redis.get(cacheKey);
   
     if (cached) {

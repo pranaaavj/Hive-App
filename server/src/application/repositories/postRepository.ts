@@ -50,9 +50,9 @@ export class MongoPostRepository implements PostRepository {
       return JSON.parse(cached);
     }
 
-    const posts = await PostModel.find({ isDeleted: false, status: 'active' })
+    const posts = await PostModel.find({ userId, isDeleted: false, status: 'active' })
       .sort({ createdAt: -1 })
-      // .populate('userId', 'username profilePicture');
+      .populate('userId', 'username profilePicture');
     if (this.redis.client) {
       await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
     }

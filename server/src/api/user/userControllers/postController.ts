@@ -18,7 +18,6 @@ import { RequestWithUser } from '../../../types/RequestWithUser';
         }
   
         const newPost = await this.postService.createPost(userId, images, caption);
-        console.log(newPost)
         res.status(201).json({
           success: true,
           message: 'Post created successfully',

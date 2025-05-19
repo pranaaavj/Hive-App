@@ -1,5 +1,3 @@
-version: "3.9"  # optional but recommended
-
 services:
   frontend:
     build:
@@ -39,7 +37,7 @@ services:
     restart: on-failure
 
   mongo:
-    image: arm64v8/mongo:6.0
+    image: mongo:6.0
     container_name: hive-app-mongo
     ports:
       - "27017:27017"
@@ -56,7 +54,7 @@ services:
       start_period: 40s
 
   mongo-init:
-    image: arm64v8/mongo:6.0
+    image: mongo:6.0
     container_name: hive-app-mongo-init
     depends_on:
       mongo:
@@ -72,7 +70,7 @@ services:
       - hive-network
 
   redis:
-    image: redis
+    image: redis:7-alpine
     container_name: hive-app-redis
     ports:
       - "6379:6379"
