@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import { comparePassword, hashPassword } from '../../utils/hash';
 
 export interface IUserModel extends Document {
@@ -7,7 +7,12 @@ export interface IUserModel extends Document {
   password: string;
   role: string;
   isVerified: boolean;
-  resetPasswordToken?: string;
+  resetPasswordToken?: string,
+  profilePicture?: string,
+  bio?: string,
+  postsCount: number;
+  followers: Types.ObjectId[];
+  following: Types.ObjectId[];
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -18,11 +23,16 @@ const userSchema = new Schema<IUserModel>(
   {
     username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    password: { type: String, required: true },
+    password: { type: String, required: true, },
     role: { type: String, default: 'user' },
     isVerified: { type: Boolean, default: false },
     resetPasswordToken: { type: String },
     isDeleted: { type: Boolean, default: false },
+    profilePicture: {type: String, default: ""},
+    bio: {type: String, default: ""},
+    postsCount: {type: Number, default: 0},
+    followers: [{type: Schema.Types.ObjectId, ref: "User", default: []}],
+    following: [{type: Schema.Types.ObjectId, ref: "User", default: []}]
   },
   { timestamps: true }
 );

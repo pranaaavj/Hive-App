@@ -90,6 +90,7 @@ export const RegisterPage: React.FC = () => {
       setErrors({});
       setTouched({});
     } catch (err: any) {
+      console.log(err)
       const fieldErrors = err?.data?.fields;
       if(fieldErrors) {
         setErrors(fieldErrors)

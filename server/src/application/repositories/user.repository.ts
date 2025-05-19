@@ -55,6 +55,7 @@ export class MongoUserRepository implements UserRepository {
     const cacheKey = `user:email:${email}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
+      
       return JSON.parse(cached);
     }
 
@@ -79,22 +80,29 @@ export class MongoUserRepository implements UserRepository {
     return user;
   }
 
-  async findByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
-    const cacheKey = `user:identifier:${identifier}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-
-    let user = await UserModel.findOne({ email: identifier, isDeleted: false });
-    if (!user) {
-      user = await UserModel.findOne({ username: identifier, isDeleted: false });
-    }
-    if (user && this.redis.client) {
-      await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
-    }
-    return user;
+  // In your repository class
+async findByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
+  const cacheKey = `user:identifier:${identifier}`;
+  const cachedUserId = await this.redis.get(cacheKey);
+  
+  if (cachedUserId) {
+    // Fetch full user by ID to retain Mongoose methods like comparePassword
+    const cachedUser = await UserModel.findById(cachedUserId);
+    if (cachedUser) return cachedUser;
   }
+
+
+  let user = await UserModel.findOne({ email: identifier, isDeleted: false });
+  if (!user) {
+    user = await UserModel.findOne({ username: identifier, isDeleted: false });
+  }
+
+  if (user && this.redis.client) {
+    await this.redis.setEx(cacheKey, (user._id as any).toString(), 60);
+  }
+
+  return user;
+}
 
   async findByResetToken(token: string): Promise<IUserModel | null> {
     return await UserModel.findOne({ resetPasswordToken: token, isDeleted: false });

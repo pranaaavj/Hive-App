@@ -5,7 +5,7 @@ import { RedisClient } from '../../infrastructure/cache/redis';
 
 export interface PostRepository {
   save(post: Post): Promise<IPostModel>;
-  findAll(page: number, limit: number): Promise<IPostModel[]>;
+  findAll(userId: string): Promise<IPostModel[]>;
   findById(id: string): Promise<IPostModel | null>;
   delete(id: string): Promise<IPostModel | null>;
   likePost(postId: string, userId: string): Promise<IPostModel | null>;
@@ -42,8 +42,8 @@ export class MongoPostRepository implements PostRepository {
     return savedPost;
   }
 
-  async findAll(page: number, limit: number): Promise<IPostModel[]> {
-    const cacheKey = `posts:page:${page}:limit:${limit}`;
+  async findAll(userId: string): Promise<IPostModel[]> {
+    const cacheKey = `posts:user:${userId}`;
     const cached = await this.redis.get(cacheKey);
 
     if (cached) {
@@ -52,10 +52,7 @@ export class MongoPostRepository implements PostRepository {
 
     const posts = await PostModel.find({ isDeleted: false, status: 'active' })
       .sort({ createdAt: -1 })
-      .skip(page * limit)
-      .limit(limit)
-      .populate('userId', 'username profilePicture');
-
+      // .populate('userId', 'username profilePicture');
     if (this.redis.client) {
       await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
     }

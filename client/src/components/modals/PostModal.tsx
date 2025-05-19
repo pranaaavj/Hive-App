@@ -81,7 +81,7 @@ export function PostModal({ open, onOpenChange }: PostModalProps) {
               uploadedUrls.push(url)
             }
           }
-          console.log(uploadedUrls)
+          console.log(uploadedUrls, caption)
           await addPost({images: uploadedUrls, caption})
   
       resetForm()

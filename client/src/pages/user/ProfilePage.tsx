@@ -1,14 +1,19 @@
-
-import { useState } from "react"
-import { Calendar, Heart, LinkIcon, MapPin, MessageCircle, Share2, UserPlus } from "lucide-react"
+import type React from "react"
+import { useState, useEffect, useRef } from "react"
+import { Calendar, Camera, Check, Heart, LinkIcon, MapPin, MessageCircle, Share2, UserPlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { useSelector } from "react-redux"
-import { RootState } from "@/redux/store/store"
+import { useAppSelector } from "@/hooks/reduxHooks"
+import { useGetUserPostsQuery } from "@/services/authApi"
+import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
+import { ImageCropper } from "@/components/ImageCropper"
+import { updloadToCloudinary } from "@/utils/cloudinary"
+import { useAddProfilePictureMutation, useGetProfileDetailsQuery } from "@/services/authApi"
+
 
 // Types for our data models
 interface User {
@@ -27,20 +32,14 @@ interface User {
   isVerified: boolean
 }
 
-interface Post {
-  id: string
-  content: string
-  image?: string
-  likes: number
-  comments: number
-  shares: number
-  createdAt: string
-  user: {
-    id: string
-    name: string
-    username: string
-    profileImage: string
-  }
+export type Post = {
+  _id: string
+  userId: string
+  caption: string
+  imageUrls: string[]
+  likes: string[]
+  likeCount: number
+  commentCount: number
 }
 
 // Mock data for demonstration
@@ -60,7 +59,7 @@ const userData: User = {
   isVerified: true,
 }
 
-const postsData: Post[] = [
+const postsData = [
   {
     id: "1",
     content:
@@ -111,75 +110,157 @@ const postsData: Post[] = [
 ]
 
 export function ProfilePage() {
-const username = useSelector((state: RootState) => state.user.user.username)
+  const username = useAppSelector((state) => state.user.user?.username)
+  const { data, isLoading } = useGetUserPostsQuery(undefined)
+  const {data: profile, isComing} = useGetProfileDetailsQuery(undefined)
   const [isFollowing, setIsFollowing] = useState(false)
   const [activeTab, setActiveTab] = useState("posts")
+  const [posts, setPosts] = useState([])
+
+  const [profileImage, setProfileImage] = useState("")
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [croppedImage, setCroppedImage] = useState<File | null>(null)
+  const [addProfilePicture] = useAddProfilePictureMutation()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (data?.posts) {
+      setPosts(data.posts)
+    }
+  }, [data])
+
+  useEffect(() => {
+    if (profile?.profilePicture) {
+      setProfileImage(profile.profilePicture);
+    }
+  }, [profile]);
 
   const toggleFollow = () => {
     setIsFollowing(!isFollowing)
   }
 
+  
+  const handleProfileImageClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0]
+      const reader = new FileReader()
+
+      reader.onload = () => {
+        setSelectedImage(reader.result as string)
+        setIsUploadModalOpen(true)
+      }
+
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleCropComplete = (file: File) => {
+    setCroppedImage(file)
+  }
+
+  const handleSaveImage = async () => {
+    if (!croppedImage) return
+
+    const url = await updloadToCloudinary(croppedImage)
+    if (url) {
+      setProfileImage(url) 
+    }
+    await addProfilePicture({imageUrl: url}).unwrap()
+
+    setIsUploadModalOpen(false)
+    setSelectedImage(null)
+    setCroppedImage(null)
+  }
+
+  const handleCancelUpload = () => {
+    setIsUploadModalOpen(false)
+    setSelectedImage(null)
+    setCroppedImage(null)
+  }
+  if (isLoading || isComing) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>
+  }
+
   return (
-    <div className="max-w-4xl mx-auto bg-amber-50 p-4 sm:p-6 md:p-8 space-y-6">
+    <div className="max-w-5xl mx-auto bg-gradient-to-b from-amber-50 to-white p-4 sm:p-6 md:p-8 space-y-6 rounded-lg shadow-sm">
       {/* Profile Header */}
-      <div className="relative px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg">
+      <div className="relative px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg shadow-md">
         <div className="flex flex-col sm:flex-row gap-6">
-          {/* Profile Image */}
-          <div className="flex-shrink-0">
-            <Avatar className="h-32 w-32 ring-4 ring-background shadow-lg">
-              <AvatarImage src={userData.profileImage || "/placeholder.svg"} alt={userData.name} />
-              <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+          {/* Profile Image with Upload Functionality */}
+          <div className="flex-shrink-0 relative group">
+            <div
+              className="relative cursor-pointer rounded-full overflow-hidden h-32 w-32 ring-4 ring-white shadow-lg"
+              onClick={handleProfileImageClick}
+            >
+              <Avatar className="h-32 w-32">
+              <AvatarImage src={profileImage || "/placeholder.svg"} alt="profile" />
+                <AvatarFallback>{(profile?.username ?? "U").charAt(0)}</AvatarFallback>
+              </Avatar>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <Camera className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
           </div>
 
           <div className="flex-1">
             {/* User Info */}
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{username}</h1>
+                <h1 className="text-2xl font-bold">{profile?.username}</h1>
                 {userData.isVerified && (
-                  <Badge variant="secondary" className="rounded-full bg-violet-100">
+                  <Badge variant="secondary" className="rounded-full bg-violet-100 text-violet-700">
                     Verified
                   </Badge>
                 )}
               </div>
               <p className="text-muted-foreground">@{userData.username}</p>
-              <p className="mt-3">{userData.bio}</p>
+              <p className="mt-3 text-gray-700">{userData.bio}</p>
 
               <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm">
                 {userData.location && (
                   <div className="flex items-center text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-1" />
+                    <MapPin className="h-4 w-4 mr-1 text-violet-500" />
                     {userData.location}
                   </div>
                 )}
                 {userData.website && (
                   <div className="flex items-center text-violet-500">
                     <LinkIcon className="h-4 w-4 mr-1" />
-                    <a href={`https://${userData.website}`} target="_blank" rel="noopener noreferrer">
+                    <a
+                      href={`https://${userData.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
                       {userData.website}
                     </a>
                   </div>
                 )}
                 <div className="flex items-center text-muted-foreground">
-                  <Calendar className="h-4 w-4 mr-1" />
+                  <Calendar className="h-4 w-4 mr-1 text-violet-500" />
                   Joined {userData.joinDate}
                 </div>
               </div>
 
               {/* Stats */}
               <div className="flex gap-6 mt-4">
-                <div>
-                  <span className="font-semibold">{userData.posts}</span>
-                  <span className="text-muted-foreground ml-1">Posts</span>
+                <div className="flex flex-col items-center sm:items-start">
+                  <span className="font-semibold">{posts?.length}</span>
+                  <span className="text-muted-foreground text-sm">Posts</span>
                 </div>
-                <div>
-                  <span className="font-semibold">{userData.followers.toLocaleString()}</span>
-                  <span className="text-muted-foreground ml-1">Followers</span>
+                <div className="flex flex-col items-center sm:items-start">
+                  <span className="font-semibold">{profile?.followersCount}</span>
+                  <span className="text-muted-foreground text-sm">Followers</span>
                 </div>
-                <div>
-                  <span className="font-semibold">{userData.following.toLocaleString()}</span>
-                  <span className="text-muted-foreground ml-1">Following</span>
+                <div className="flex flex-col items-center sm:items-start">
+                  <span className="font-semibold">{profile?.followingCount}</span>
+                  <span className="text-muted-foreground text-sm">Following</span>
                 </div>
               </div>
             </div>
@@ -187,7 +268,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
 
           {/* Actions */}
           <div className="flex sm:flex-col gap-2 mt-4 sm:mt-0">
-            <Button variant="default" size="sm" className="bg-violet-600 hover:bg-violet-700">
+            <Button variant="default" size="sm" className="bg-violet-600 hover:bg-violet-700 shadow-sm">
               <MessageCircle className="h-4 w-4 mr-2" />
               Message
             </Button>
@@ -195,7 +276,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
               variant={isFollowing ? "outline" : "default"}
               size="sm"
               onClick={toggleFollow}
-              className={isFollowing ? "" : "bg-violet-600 hover:bg-violet-700"}
+              className={isFollowing ? "shadow-sm" : "bg-violet-600 hover:bg-violet-700 shadow-sm"}
             >
               {isFollowing ? (
                 "Following"
@@ -206,7 +287,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
                 </>
               )}
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="shadow-sm">
               <Share2 className="h-4 w-4 mr-2" />
               Share
             </Button>
@@ -218,7 +299,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
 
       {/* Content Tabs */}
       <Tabs defaultValue="posts" className="px-4 sm:px-6 lg:px-8">
-        <TabsList className="grid grid-cols-4 w-full max-w-md mx-auto bg-violet-50">
+        <TabsList className="grid grid-cols-4 w-full max-w-md mx-auto bg-violet-50 rounded-lg overflow-hidden">
           <TabsTrigger value="posts" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
             Posts
           </TabsTrigger>
@@ -235,44 +316,45 @@ const username = useSelector((state: RootState) => state.user.user.username)
 
         <TabsContent value="posts" className="mt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {postsData.map((post) => (
-              <Card key={post.id} className="overflow-hidden group hover:shadow-md transition-all duration-300">
-                <CardContent className="p-0">
-                  {post.image && (
-                    <div className="relative aspect-square w-full">
-                      <img
-                        src={post.image || "/placeholder.svg"}
-                        alt="Post image"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="flex gap-4 text-white">
-                          <div className="flex items-center gap-1">
-                            <Heart className="h-5 w-5" />
-                            <span>{post.likes}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MessageCircle className="h-5 w-5" />
-                            <span>{post.comments}</span>
+            {posts?.length > 0 ? (
+              posts.map((post: Post) => (
+                <Card
+                  key={post?._id}
+                  className="overflow-hidden group hover:shadow-md transition-all duration-300 border border-gray-200"
+                >
+                  <CardContent className="p-0">
+                    {post?.imageUrls && post.imageUrls.length > 0 && (
+                      <div className="relative aspect-square w-full">
+                        <img
+                          src={post.imageUrls[0] || "/placeholder.svg"}
+                          alt="Post image"
+                          className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <div className="flex gap-4 text-white">
+                            <div className="flex items-center gap-1">
+                              <Heart className="h-5 w-5" />
+                              <span>{post.likeCount || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MessageCircle className="h-5 w-5" />
+                              <span>{post.commentCount || 0}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
+                    )}
+                    <div className="p-3">
+                      <p className="text-sm line-clamp-2">{post.caption}</p>
                     </div>
-                  )}
-                  <div className="p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={post.user.profileImage || "/placeholder.svg"} alt={post.user.name} />
-                        <AvatarFallback>{post.user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div className="text-sm font-medium">{post.user.name}</div>
-                      <div className="text-xs text-muted-foreground ml-auto">{post.createdAt}</div>
-                    </div>
-                    <p className="text-sm line-clamp-2">{post.content}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full py-12 text-center text-muted-foreground">
+                <p>No posts yet. Share your first post!</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -285,7 +367,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
                   <img
                     src={post.image || ""}
                     alt="Media"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <div className="flex gap-4 text-white">
@@ -306,13 +388,13 @@ const username = useSelector((state: RootState) => state.user.user.username)
 
         <TabsContent value="likes">
           <div className="py-12 text-center text-muted-foreground">
-            <p>Posts liked by {userData.name} will appear here</p>
+            <p>Posts liked by {username || userData.name} will appear here</p>
           </div>
         </TabsContent>
 
         <TabsContent value="about">
           <div className="py-6 space-y-6 max-w-2xl mx-auto">
-            <Card>
+            <Card className="shadow-sm">
               <CardContent className="p-6">
                 <h3 className="font-semibold text-lg text-violet-700 mb-2">Bio</h3>
                 <p>{userData.bio}</p>
@@ -320,7 +402,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg text-violet-700 mb-2">Location</h3>
                   <div className="flex items-center">
@@ -330,7 +412,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg text-violet-700 mb-2">Website</h3>
                   <a
@@ -345,7 +427,7 @@ const username = useSelector((state: RootState) => state.user.user.username)
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="shadow-sm">
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg text-violet-700 mb-2">Joined</h3>
                   <div className="flex items-center">
@@ -358,6 +440,30 @@ const username = useSelector((state: RootState) => state.user.user.username)
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Image Upload Modal */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Profile Picture</DialogTitle>
+          </DialogHeader>
+          {selectedImage && (
+            <div className="flex flex-col items-center space-y-4">
+              <ImageCropper image={selectedImage} onCropComplete={handleCropComplete} />
+            </div>
+          )}
+          <DialogFooter className="flex justify-between sm:justify-end gap-2">
+            <Button variant="outline" onClick={handleCancelUpload}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSaveImage} disabled={!croppedImage} className="bg-violet-600 hover:bg-violet-700">
+              <Check className="h-4 w-4 mr-2" />
+              Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

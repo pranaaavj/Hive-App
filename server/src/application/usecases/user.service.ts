@@ -1,15 +1,10 @@
-
 import jwt from 'jsonwebtoken';
-import { IUser,User } from '../../domain/entities/user.entity'; 
-import { UserRepository } from '../repositories/user.repository'; 
+import { IUser, User } from '../../domain/entities/user.entity';
+import { UserRepository } from '../repositories/user.repository';
 import { RedisClient } from '../../infrastructure/cache/redis';
 import { ApiError } from '../../utils/apiError';
-import { IUserModel } from '../../infrastructure/model/user.model'; 
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} from '../../utils/jwt';
+import { IUserModel } from '../../infrastructure/model/user.model';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt';
 import { sendVerificationEmail } from '../../utils/sendEmail';
 
 export class UserService {
@@ -34,6 +29,7 @@ export class UserService {
           await sendVerificationEmail(existingUser.email, token, 'register');
           return existingUser;
         }
+
         throw new ApiError('Validation error', 409, { email: 'Email already in use' });
       }
 
@@ -66,29 +62,15 @@ export class UserService {
     refreshToken: string;
     user: IUserModel;
   }> {
-    try {
-      const user = await this.userRepository.findByEmailOrUsername(credentials.identifier);
-      if (!user) {
-        throw new ApiError('Username or email does not exist', 404);
-      }
+    const user = await this.userRepository.findByEmailOrUsername(credentials.identifier);
+    if (!user) throw new ApiError('Username or email does not exist', 404);
+    if (!user.isVerified) throw new ApiError('User email not verified', 403);
+    const isPasswordValid = await user.comparePassword(credentials.password);
+    if (!isPasswordValid) throw new ApiError('Invalid email or password', 401);
 
-      if (!user.isVerified) {
-        throw new ApiError('User email not verified, please register again', 403);
-      }
-
-      const isPasswordValid = await user.comparePassword(credentials.password);
-      if (!isPasswordValid) {
-        throw new ApiError('Invalid email or password', 401);
-      }
-
-      const accessToken = generateAccessToken(user);
-      const refreshToken = generateRefreshToken(user);
-
-      return { accessToken, refreshToken, user };
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      throw new ApiError('Error logging in', 500);
-    }
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    return { accessToken, refreshToken, user };
   }
 
   async logout(token: string): Promise<void> {
@@ -107,28 +89,13 @@ export class UserService {
   }
 
   async refreshToken(refreshToken: string): Promise<string> {
-    try {
-      const isBlacklisted = await this.redis.get(`blacklist:${refreshToken}`);
-      if (isBlacklisted) {
-        throw new ApiError('Invalid refresh token', 401);
-      }
-
-      const payload = verifyRefreshToken(refreshToken);
-      if (!payload || !payload.id || !payload.email) {
-        throw new ApiError('Invalid refresh token', 401);
-      }
-
-      const user = await this.userRepository.findById(payload.id);
-      if (!user || user.isDeleted) {
-        throw new ApiError('User not found', 404);
-      }
-
-      const newAccessToken = generateAccessToken(user);
-      return newAccessToken;
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      throw new ApiError('Error refreshing token', 401);
-    }
+    const isBlacklisted = await this.redis.get(`blacklist:${refreshToken}`);
+    if (isBlacklisted) throw new ApiError('Invalid refresh token', 401);
+    const payload = verifyRefreshToken(refreshToken);
+    if (!payload || !payload.id || !payload.email) throw new ApiError('Invalid refresh token', 401);
+    const user = await this.userRepository.findById(payload.id);
+    if (!user || user.isDeleted) throw new ApiError('User not found', 404);
+    return generateAccessToken(user);
   }
 
   async verifyEmail(token: string): Promise<string> {

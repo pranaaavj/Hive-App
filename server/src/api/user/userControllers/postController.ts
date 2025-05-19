@@ -1,27 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 import { PostService } from '../../../application/usecases/post.service';
 import { ApiError } from '../../../utils/apiError'; 
+import { RequestWithUser } from '../../../types/RequestWithUser';
 
-
-interface RequestWithUser extends Request {
-    user?: { userId: string; email: string };
-  }
 
   export class PostController {
     constructor(private postService: PostService) {}
   
-    createPost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    createPost = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+        
+      
       try {
-        const userReq = req as RequestWithUser;
-        const userId = userReq.user?.userId;
-        const { caption, imageUrls } = req.body;
-  
+        const {images, caption} = req.body
+        const userId = req?.user?.userId
         if (!userId) {
           throw new ApiError('User not authenticated', 401);
         }
   
-        const newPost = await this.postService.createPost(userId, imageUrls, caption);
-  
+        const newPost = await this.postService.createPost(userId, images, caption);
+        console.log(newPost)
         res.status(201).json({
           success: true,
           message: 'Post created successfully',
@@ -32,14 +29,15 @@ interface RequestWithUser extends Request {
       }
     };
   
-    getAllPosts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    getAllPosts = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
       try {
-        const { page = 0, limit = 10 } = req.query;
-        const posts = await this.postService.getAllPosts(Number(page), Number(limit));
+        const userId = req.user?.userId
+        
+        const posts = await this.postService.getAllPosts(userId as string);
         res.status(200).json({
           success: true,
           message: 'Posts fetched successfully',
-          data: posts,
+          posts,
         });
       } catch (error) {
         next(error);

@@ -1,11 +1,17 @@
 
-// import { Router } from 'express';
-// import { setupUserRoutes } from './authRoute'; 
-// import { UserController } from '../userControllers/authController'; 
+import { Router } from 'express';
+import { setupUserRoutes } from './authRoute'; 
+import { commentController, postController, profileController, userController } from '../../../setup';
+import { setupPostRoutes } from './postRoute';
+import { setupCommentRoutes } from './commentRoutes';
+import { setupProfileRoutes } from './profileRoute';
 
-// export function setupRoutes(userController: UserController): Router {
-//   const router = Router();
-//   router.use('/auth', setupUserRoutes(userController));
+const router = Router()
 
-//   return router;
-// }
+router.use("/auth", setupUserRoutes(userController))
+router.use("/profile", setupProfileRoutes(profileController))
+router.use("/post", setupPostRoutes(postController))
+router.use("/comments", setupCommentRoutes(commentController))
+
+
+export {router}
