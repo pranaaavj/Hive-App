@@ -2,6 +2,7 @@ import { IPostModel, PostModel } from '../../infrastructure/model/postModel';
 import { IPost, Post } from '../../domain/entities/postEntity';
 import { Types } from 'mongoose';
 import { RedisClient } from '../../infrastructure/cache/redis';
+import { UserModel } from '../../infrastructure/model/user.model';
 
 export interface PostRepository {
   save(post: Post): Promise<IPostModel>;
@@ -12,6 +13,7 @@ export interface PostRepository {
   unlikePost(postId: string, userId: string): Promise<IPostModel | null>;
   findByUserId(userId: string, page: number, limit: number): Promise<IPostModel[]>;
   updateCommentCount(postId: string, increment: number): Promise<void>;
+  findUserPost(userId:string,page:number,limit:number):Promise<IPostModel[]>
 }
 
 export class MongoPostRepository implements PostRepository {
@@ -49,10 +51,10 @@ export class MongoPostRepository implements PostRepository {
     if (cached) {
       return JSON.parse(cached);
     }
-
+    
     const posts = await PostModel.find({ isDeleted: false, status: 'active' })
       .sort({ createdAt: -1 })
-      // .populate('userId', 'username profilePicture');
+      .populate('userId', 'username profilePicture');
     if (this.redis.client) {
       await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
     }
@@ -146,5 +148,32 @@ export class MongoPostRepository implements PostRepository {
     if (post && this.redis.client) {
       await this.redis.setEx(`post:${postId}`, JSON.stringify(post), 60);
     }
+  }
+
+  async findUserPost(userId:string,page:number,limit:number):Promise<IPostModel[]>{
+    const cacheKey = `post:user:${userId}:page:${page}:limit:${limit}`
+    const cached = await this.redis.get(cacheKey)
+
+    if(cached){
+      return JSON.parse(cached)
+    }
+
+    const user = await UserModel.findById(userId).select('following')
+    const followingIds = user?.following || []
+
+    const posts = await PostModel.find({
+      isDeleted:false,
+      status:'active',
+      userId:{$in:[...followingIds,new Types.ObjectId(userId)]}
+    })
+    .sort({createdAt:-1})
+    .skip((page -1)* limit)
+    .limit(limit)
+    .populate('userId','username profilePicture')
+
+    if(this.redis.client){
+      await this.redis.setEx(cacheKey,JSON.stringify(posts),60)
+    }
+    return posts
   }
 }

@@ -10,6 +10,8 @@ import { CommentService } from "./application/usecases/comment.service";
 import { PostService } from "./application/usecases/post.service";
 import { ProfileService } from "./application/usecases/profileService";
 import { UserService } from "./application/usecases/user.service";
+import { HomeController } from "./api/user/userControllers/homeController";
+import { HomeService } from "./application/usecases/home.service";
 
 const userRepository = new MongoUserRepository()
 const userService = new UserService(userRepository)
@@ -28,9 +30,13 @@ const profileRepository = new MongoProfileRepository()
 const profileService = new ProfileService(profileRepository)
 const profileController = new ProfileControler(profileService)
 
+const homeService = new HomeService(postRepository)
+const homeController = new HomeController(homeService)
+
 export {
     userController,
     postController,
     commentController,
-    profileController
+    profileController,
+    homeController
 }

@@ -3,6 +3,7 @@ import storage from 'redux-persist/lib/storage'; // Default storage (localStorag
 import { authApi } from '@/services/authApi';
 import userReducer from '../slices/userSlice';
 import { configureStore } from '@reduxjs/toolkit';
+import { postApi } from '@/services/postApi';
 
 // Persist configuration
 const persistConfig = {
@@ -16,12 +17,13 @@ const persistedUserReducer = persistReducer(persistConfig, userReducer);
 export const store = configureStore({
   reducer: {
     [authApi.reducerPath]: authApi.reducer,
+    [postApi.reducerPath]:postApi.reducer,
     user: persistedUserReducer, // Use the persisted version
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false, // Disable serializable check for redux-persist
-    }).concat(authApi.middleware),
+    }).concat(authApi.middleware,postApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;
