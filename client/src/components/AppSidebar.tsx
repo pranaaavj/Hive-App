@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { Link } from "react-router-dom"
-import { Home, Compass, Bell, Send, PlusSquare, User, BookmarkIcon, Settings, LogOut, Search } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { Home, Compass, Bell, Send, PlusSquare, User, BookmarkIcon, Settings, LogOut, Search, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Sidebar,
@@ -16,13 +16,44 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { NotificationsSidebar } from "./NotificartionsSidebar"
+import { useSearchUsersQuery } from "@/services/authApi"
+import { useAppSelector } from "@/hooks/reduxHooks"
 
 interface AppSidebarProps {
   onCreateClick?: () => void
 }
 
 export function AppSidebar({ onCreateClick }: AppSidebarProps) {
+  const navigate = useNavigate()
+  const userId = useAppSelector((state) => state.user.user?.id)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [query, setQuery] = useState("")
+  const [showResults, setShowResults] = useState(false)
+  const searchRef = useRef<HTMLDivElement>(null)
+  const { data: users = [], isLoading } = useSearchUsersQuery(query, {
+    skip: query?.length < 2,
+  })
+
+  // Show results when query is valid
+  useEffect(() => {
+    if (query.length >= 2) {
+      setShowResults(true)
+    }
+  }, [query])
+
+  // Handle click outside to close results
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   const toggleNotifications = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -41,15 +72,90 @@ export function AppSidebar({ onCreateClick }: AppSidebarProps) {
             <img className="h-[100px] self-center" src="/logo/hive-logo.png" alt="Hive Logo" />
           </div>
 
-          <div className="relative mt-2">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+          <div className="relative mt-2 flex flex-col" ref={searchRef}>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search by username"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              />
+
+              {/* User search results modal */}
+              {showResults && query.length >= 2 && (
+                <div
+                  className="absolute left-full ml-6 top-0 z-50 bg-white rounded-lg shadow-xl border border-gray-200 w-72 max-h-[400px] overflow-hidden animate-in fade-in duration-200"
+                  style={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)" }}
+                >
+                  <div className="sticky top-0 bg-white z-10">
+                    <div className="flex items-center justify-between p-3 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-800">Search Results</h3>
+                      <button
+                        onClick={() => setShowResults(false)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        aria-label="Close search results"
+                      >
+                        <X className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </div>
+
+                    {isLoading && (
+                      <div className="flex justify-center items-center py-4">
+                        <div className="h-5 w-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="overflow-y-auto max-h-[350px]">
+                    {!isLoading && users.length === 0 && (
+                      <div className="p-4 text-center text-gray-500 text-sm">No users found matching "{query}"</div>
+                    )}
+
+                    {users.map((user) => (
+                      <div
+                        key={user._id}
+                        className="p-3 hover:bg-amber-50 transition-colors flex items-center gap-3 cursor-pointer border-b border-gray-50 last:border-b-0"
+                        onClick={() => {
+                          setQuery("")
+                          setShowResults(false)
+                          navigate(`profile/${user._id}`)
+                        }}
+                      >
+                        <div className="flex">
+
+                        <Avatar className="h-10 w-10 border border-amber-200">
+                          <AvatarImage
+                            src={user.profilePicture || "/placeholder.svg?height=40&width=40"}
+                            alt={user.username}
+                          />
+                          <AvatarFallback>{user.username.substring(0, 1).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="ml-6 flex-1 min-w-0">
+                          <div className="flex gap-1 flex-col items-center text-xs">
+                          <p className="font-semibold text-sm truncate">{user.username}</p>
+                            <span>{user.followers} followers</span>
+                            {user.followers > 0 && (
+                              <span className="inline-flex items-center ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800">
+                                Popular
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="sticky bottom-0 bg-gray-50 p-2 text-xs text-center text-gray-500 border-t border-gray-100">
+                    Click on a user to view their profile
+                  </div>
+                </div>
+              )}
             </div>
-            <input
-              type="text"
-              placeholder="Search"
-              className="pl-10 pr-4 py-2 w-full bg-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
           </div>
         </SidebarHeader>
 
@@ -106,7 +212,7 @@ export function AppSidebar({ onCreateClick }: AppSidebarProps) {
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Profile" className="py-3 text-sm">
-                <Link to="/profile" className="flex items-center gap-3 font-medium">
+                <Link to={`/profile/${userId}`} className="flex items-center gap-3 font-medium">
                   <User className="h-5 w-5" />
                   <span>Profile</span>
                 </Link>

@@ -4,6 +4,7 @@ import { baseQueryWithReauth } from "./basequery";
 export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: baseQueryWithReauth,
+  tagTypes:["Profile"],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (loginData) => ({
@@ -12,7 +13,6 @@ export const authApi = createApi({
         body: loginData,
       }),
     }),
-
     register: builder.mutation({
       query: (registerData) => ({
         url: "auth/register",
@@ -20,7 +20,6 @@ export const authApi = createApi({
         body: registerData,
       }),
     }),
-
     resetPassword: builder.mutation<void, { token: string; password: string }>({
       query: ({ token, password }) => ({
         url: `auth/reset-password?token=${token}`,
@@ -28,7 +27,6 @@ export const authApi = createApi({
         body: { password },
       }),
     }),
-
     forgetPassword: builder.mutation({
       query: ({ email }) => ({
         url: "auth/forgot-password",
@@ -44,8 +42,8 @@ export const authApi = createApi({
       }),
     }),
     getUserPosts: builder.query({
-      query: () => ({
-        url: `post/user-posts`,
+      query: (userId) => ({
+        url: `post/user-posts?userId=${userId}`,
         method: "GET",
       })
     }),
@@ -54,12 +52,33 @@ export const authApi = createApi({
         url: "profile/profile-picture",
         method: "POST",
         body: {imageUrl}
-      })
+      }),
+      invalidatesTags: ["Profile"]
     }),
     getProfileDetails: builder.query({
-      query: () => ({
-        url: "profile/profile-details",
+      query: (userId) => ({
+        url: `profile/profile-details?userId=${userId}`,
         method: "GET"
+      }),
+      providesTags: ["Profile"]
+    }),
+    searchUsers: builder.query({
+      query: (query) => ({
+        url: `/profile/search-users?q=${query}`,
+        method: "GET"
+      })
+    }),
+    followUser: builder.mutation({
+      query: (userId) => ({
+        url: `/profile/follow-user?userId=${userId}`,
+        method: "POST"
+      }),
+      invalidatesTags: ["Profile"]
+    }),
+    unfollowUser: builder.mutation({
+      query: (userId) =>  ({
+        url: `/profile/unfollow-user?userId=${userId}`,
+        method: "POST"
       })
     })
   }),
@@ -73,5 +92,8 @@ export const {
   useAddPostMutation,
   useGetUserPostsQuery,
   useAddProfilePictureMutation,
-  useGetProfileDetailsQuery
+  useGetProfileDetailsQuery,
+  useSearchUsersQuery,
+  useFollowUserMutation,
+  useUnfollowUserMutation
 } = authApi;

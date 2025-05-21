@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, matchPath } from "react-router-dom";
 import { AppSidebar } from "../AppSidebar";
 import { RightSidebar } from "../RightSidebar";
 import { PostModal } from "../modals/PostModal";
@@ -9,9 +9,13 @@ export const MainLayout: React.FC = () => {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const location = useLocation();
 
-  const pathsWithoutRightSidebar = ['/profile', '/messages', '/settings'];
-  const showRightSidebar = !pathsWithoutRightSidebar.includes(location.pathname);
+  const pathsWithoutRightSidebar = ['/profile/:userId', '/messages', '/settings'];
 
+const isPathWithoutSidebar = pathsWithoutRightSidebar.some(path =>
+  matchPath({ path, end: true }, location.pathname)
+);
+
+const showRightSidebar = !isPathWithoutSidebar;
   return (
     <SidebarProvider>
       <main className="relative h-screen w-full overflow-hidden">
