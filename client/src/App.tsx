@@ -8,6 +8,7 @@ import { ForgetPasswordPage } from './pages/user/ForgetPassword'
 import { MainLayout } from './components/layouts/MainLayout'
 import { ProfilePage } from './pages/user/ProfilePage'
 import { ProtectedRoute } from './utils/ProtectedRoute'
+import {ProfileEditPage} from './pages/user/ProfielEditPage'
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
       }>
         <Route path="/home" element={<HomePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
+        <Route path='/profile/edit/:userId' element={<ProfileEditPage />} />
       </Route>
     </Routes>
   )

@@ -80,6 +80,26 @@ export const authApi = createApi({
         url: `/profile/unfollow-user?userId=${userId}`,
         method: "POST"
       })
+    }),
+    upadateProfile: builder.mutation({
+      query: (updatedData) => ({
+        url: "/profile/update-profile",
+        method: "PATCH",
+        body: {updatedData}
+      }),
+      invalidatesTags: ["Profile"]
+    }),
+    getFollowingUsers: builder.query({
+      query: (userId) => ({
+        url: `/profile/following?userId=${userId}`,
+        method: "GET"
+      })
+    }),
+    getFollowers: builder.query({
+      query: (userId) => ({
+        url: `/profile/followers?userId=${userId}`,
+        method: "GET"
+      })
     })
   }),
 });
@@ -95,5 +115,8 @@ export const {
   useGetProfileDetailsQuery,
   useSearchUsersQuery,
   useFollowUserMutation,
-  useUnfollowUserMutation
+  useUnfollowUserMutation,
+  useUpadateProfileMutation,
+  useGetFollowingUsersQuery,
+  useGetFollowersQuery  
 } = authApi;

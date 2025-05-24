@@ -1,23 +1,19 @@
-import type React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
-  Camera,
-  Check,
+  Edit,
   Heart,
   LinkIcon,
   MapPin,
   MessageCircle,
   Share2,
   UserPlus,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { useAppSelector } from "@/hooks/reduxHooks";
 import {
@@ -25,19 +21,9 @@ import {
   useFollowUserMutation,
   useUnfollowUserMutation,
 } from "@/services/authApi";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogHeader,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { ImageCropper } from "@/components/ImageCropper";
-import { updloadToCloudinary } from "@/utils/cloudinary";
-import {
-  useAddProfilePictureMutation,
-  useGetProfileDetailsQuery,
-} from "@/services/authApi";
+
+import { useGetProfileDetailsQuery } from "@/services/authApi";
+import { FollowingFollowersModal } from "@/components/modals/FollowingFollowersModal";
 
 // Types for our data models
 interface User {
@@ -145,22 +131,31 @@ export function ProfilePage() {
   } = useGetProfileDetailsQuery(userId);
   const [activeTab, setActiveTab] = useState("posts");
   const [posts, setPosts] = useState([]);
+  const navigate = useNavigate();
 
-  // Follow/unfollow mutations
   const [followUser, { isLoading: isFollowLoading }] = useFollowUserMutation();
   const [unfollowUser, { isLoading: isUnfollowLoading }] =
     useUnfollowUserMutation();
 
-  // Local state to track follow status for immediate UI feedback
   const [isFollowingState, setIsFollowingState] = useState(false);
   const [isFollowedState, setIsFollowedState] = useState(false);
 
   const [profileImage, setProfileImage] = useState("");
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [croppedImage, setCroppedImage] = useState<File | null>(null);
-  const [addProfilePicture] = useAddProfilePictureMutation();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const isOwnProfile = user == userId;
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"followers" | "following">(
+    "followers"
+  );
+
+  const openFollowersModal = () => {
+    setModalType("followers");
+    setModalOpen(true);
+  };
+  const openFollowingModal = () => {
+    setModalType("following");
+    setModalOpen(true);
+  };
 
   useEffect(() => {
     if (userId) {
@@ -186,16 +181,6 @@ export function ProfilePage() {
     if (isFollowingState) return "Following";
     if (!isFollowingState && isFollowedState) return "Follow back";
     return "Follow";
-  };
-
-  const getButtonVariant = () => {
-    return isFollowingState ? "outline" : "default";
-  };
-
-  const getButtonClass = () => {
-    return isFollowingState
-      ? "shadow-sm"
-      : "bg-violet-600 hover:bg-violet-700 shadow-sm";
   };
 
   // Handle follow/unfollow action
@@ -226,46 +211,12 @@ export function ProfilePage() {
     }
   };
 
-  const handleProfileImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        setSelectedImage(reader.result as string);
-        setIsUploadModalOpen(true);
-      };
-
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleCropComplete = (file: File) => {
-    setCroppedImage(file);
-  };
-
-  const handleSaveImage = async () => {
-    if (!croppedImage) return;
-
-    const url = await updloadToCloudinary(croppedImage);
-    if (url) {
-      setProfileImage(url);
-    }
-    await addProfilePicture({ imageUrl: url }).unwrap();
-
-    setIsUploadModalOpen(false);
-    setSelectedImage(null);
-    setCroppedImage(null);
-  };
-
-  const handleCancelUpload = () => {
-    setIsUploadModalOpen(false);
-    setSelectedImage(null);
-    setCroppedImage(null);
+  const formatJoinDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `Joined ${date.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    })}`;
   };
 
   if (isLoading || isProfileLoading) {
@@ -277,156 +228,147 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto bg-gradient-to-b from-amber-50 to-white p-4 sm:p-6 md:p-8 space-y-6 rounded-lg shadow-sm">
+    <div className="max-w-5xl mx-auto bg-gradient-to-b from-amber-50 to-white p-4 sm:pshadow-sm-6 md:p-8 space-y-6 rounded-lg ">
       {/* Profile Header */}
-      <div className="relative px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg shadow-md">
-        <div className="flex flex-col sm:flex-row gap-6">
-          {/* Profile Image with Upload Functionality */}
-          <div className="flex-shrink-0 relative group">
+      <div className="relative px-6 py-6 bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg shadow-md">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left Column: Profile Image */}
+          <div className="flex-shrink-0 relative group self-start">
             <div
-              className={`relative rounded-full overflow-hidden h-32 w-32 ring-4 ring-white shadow-lg ${
-                user === userId ? "cursor-pointer" : "cursor-default"
-              }`}
-              onClick={user === userId ? handleProfileImageClick : undefined}
+              className={`relative rounded-full overflow-hidden h-32 w-32 ring-4 ring-white shadow-lg`}
             >
               <Avatar className="h-32 w-32">
                 <AvatarImage
-                  src={profileImage || "/placeholder.svg"}
-                  alt="profile"
+                  src={profile?.profilePicture || "/placeholder.svg"}
+                  alt={profile?.username}
                 />
-                <AvatarFallback>
-                  {(profile?.username ?? "U").charAt(0)}
-                </AvatarFallback>
+                <AvatarFallback>{profile?.username.charAt(0)}</AvatarFallback>
               </Avatar>
-              {user == userId && (
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <Camera className="h-8 w-8 text-white" />
-                </div>
-              )}
             </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
           </div>
 
+          {/* Middle Column: User Info and Stats */}
           <div className="flex-1">
-            {/* User Info */}
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{profile?.username}</h1>
-                {userData.isVerified && (
-                  <Badge
-                    variant="secondary"
-                    className="rounded-full bg-violet-100 text-violet-700"
-                  >
-                    Verified
-                  </Badge>
-                )}
-              </div>
-              <p className="text-muted-foreground">@{userData.username}</p>
-              <p className="mt-3 text-gray-700">{userData.bio}</p>
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex-1">
+                {/* User Info */}
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">{profile?.username}</h1>
+                </div>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm">
-                {userData.location && (
-                  <div className="flex items-center text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-1 text-violet-500" />
-                    {userData.location}
+                {/* Stats - positioned to the right of username on desktop */}
+                <div className="flex gap-8 mt-3">
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="font-semibold">{posts.length}</span>
+                    <span className="hover:cursor-pointer hover:underline font-semiboldv text-sm">
+                      Posts
+                    </span>
                   </div>
-                )}
-                {userData.website && (
-                  <div className="flex items-center text-violet-500">
-                    <LinkIcon className="h-4 w-4 mr-1" />
-                    <a
-                      href={`https://${userData.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="font-semibold">
+                      {profile?.followersCount}
+                    </span>
+                    <span
+                      onClick={openFollowersModal}
+                      className="hover:cursor-pointer hover:underline font-semiboldv text-sm"
                     >
-                      {userData.website}
-                    </a>
+                      Followers
+                    </span>
                   </div>
-                )}
-                <div className="flex items-center text-muted-foreground">
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="font-semibold">
+                      {profile?.followingCount}
+                    </span>
+                    <span
+                      onClick={openFollowingModal}
+                      className="hover:cursor-pointer hover:underline font-semiboldv text-sm"
+                    >
+                      Following
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bio with fixed height */}
+                <div className="mt-4 min-h-[60px]">
+                  <p className="text-gray-700">
+                    {profile?.bio || "No bio available"}
+                  </p>
+                </div>
+
+                {/* Join Date */}
+                <div className="flex items-center text-muted-foreground text-sm mt-2">
                   <Calendar className="h-4 w-4 mr-1 text-violet-500" />
-                  Joined {userData.joinDate}
+                  {formatJoinDate(profile?.createdAt)}
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="flex gap-6 mt-4">
-                <div className="flex flex-col items-center sm:items-start">
-                  <span className="font-semibold">{posts?.length}</span>
-                  <span className="text-muted-foreground text-sm">Posts</span>
-                </div>
-                <div className="flex flex-col items-center sm:items-start">
-                  <span className="font-semibold">
-                    {profile?.followersCount}
-                  </span>
-                  <span className="text-muted-foreground text-sm">
-                    Followers
-                  </span>
-                </div>
-                <div className="flex flex-col items-center sm:items-start">
-                  <span className="font-semibold">
-                    {profile?.followingCount}
-                  </span>
-                  <span className="text-muted-foreground text-sm">
-                    Following
-                  </span>
-                </div>
+              {/* Right Column: Actions */}
+              <div className="flex flex-row  md:flex-col w-32 gap-2 mt-2 md:mt-0 md:self-start">
+                {isOwnProfile ? (
+                  <Button
+                    onClick={() => {
+                      navigate(`/profile/edit/${userId}`);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="shadow-sm"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-violet-600 hover:bg-violet-700 shadow-sm"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Message
+                    </Button>
+                    <Button
+                      variant={
+                        getFollowStatus() === "Following"
+                          ? "outline"
+                          : "default"
+                      }
+                      size="sm"
+                      onClick={toggleFollow}
+                      className={
+                        getFollowStatus() === "Following"
+                          ? "shadow-sm"
+                          : "bg-violet-600 hover:bg-violet-700 shadow-sm"
+                      }
+                      disabled={isFollowLoading || isUnfollowLoading}
+                    >
+                      {isFollowLoading || isUnfollowLoading ? (
+                        "Loading..."
+                      ) : (
+                        <>
+                          {getFollowStatus() === "Follow" && (
+                            <>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Follow
+                            </>
+                          )}
+                          {getFollowStatus() === "Follow back" && (
+                            <>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Follow back
+                            </>
+                          )}
+                          {getFollowStatus() === "Following" && "Following"}
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+                <Button variant="outline" size="sm" className="shadow-sm">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex sm:flex-col gap-2 mt-4 sm:mt-0">
-            {user !== profile?._id && (
-              <>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="bg-violet-600 hover:bg-violet-700 shadow-sm"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  Message
-                </Button>
-                <Button
-                  variant={getButtonVariant()}
-                  size="sm"
-                  onClick={toggleFollow}
-                  className={getButtonClass()}
-                  disabled={isFollowLoading || isUnfollowLoading}
-                >
-                  {isFollowLoading || isUnfollowLoading ? (
-                    "Loading..."
-                  ) : (
-                    <>
-                      {getFollowStatus() === "Follow" && (
-                        <>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Follow
-                        </>
-                      )}
-                      {getFollowStatus() === "Follow back" && (
-                        <>
-                          <UserPlus className="h-4 w-4 mr-2" />
-                          Follow back
-                        </>
-                      )}
-                      {getFollowStatus() === "Following" && "Following"}
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
-            <Button variant="outline" size="sm" className="shadow-sm">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
           </div>
         </div>
       </div>
@@ -602,37 +544,14 @@ export function ProfilePage() {
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Image Upload Modal */}
-      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Profile Picture</DialogTitle>
-          </DialogHeader>
-          {selectedImage && (
-            <div className="flex flex-col items-center space-y-4">
-              <ImageCropper
-                image={selectedImage}
-                onCropComplete={handleCropComplete}
-              />
-            </div>
-          )}
-          <DialogFooter className="flex justify-between sm:justify-end gap-2">
-            <Button variant="outline" onClick={handleCancelUpload}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveImage}
-              disabled={!croppedImage}
-              className="bg-violet-600 hover:bg-violet-700"
-            >
-              <Check className="h-4 w-4 mr-2" />
-              Upload
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {userId && modalOpen &&(
+        <FollowingFollowersModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          type={modalType}
+          userId={userId}
+        />
+      )}
     </div>
   );
 }

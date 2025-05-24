@@ -9,7 +9,7 @@ export const MainLayout: React.FC = () => {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const location = useLocation();
 
-  const pathsWithoutRightSidebar = ['/profile/:userId', '/messages', '/settings'];
+  const pathsWithoutRightSidebar = ['/profile/:userId','profile/edit/:userId', '/messages', '/settings'];
 
 const isPathWithoutSidebar = pathsWithoutRightSidebar.some(path =>
   matchPath({ path, end: true }, location.pathname)

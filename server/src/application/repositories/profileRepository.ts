@@ -7,11 +7,13 @@ import { SearchUsers } from '../../domain/entities/profileEntity';
 export interface ProfileRepository {
   updateProfileImage(userId: string, imageUrl: string): Promise<User | null>;
   findById(userId: string, reqUser: string): Promise<ProfileSummary | null>;
+  findByUsername(username: string): Promise<User | null>; 
   followUser(userId: string, followingUserId: string): Promise<ProfileSummary | null>;
   searchUsersByUsername(query: string): Promise<SearchUsers | null>;
   unfollowUser(userId: string, unfollowUserId: string): Promise<ProfileSummary | null>;
-  // getFollowers(userId: string): Promise<string[]>;
-  // getFollowing(userId: string): Promise<string[]>;
+  updateProfile(userId: string, updatedData: object) : Promise<ProfileSummary | null>
+  findFollowingUsers(userId: string) : Promise<ProfileSummary[] | null>
+  findFollowedUsers(userId: string) : Promise<ProfileSummary[] | null>
 }
 
 export class MongoProfileRepository implements ProfileRepository {
@@ -94,6 +96,10 @@ export class MongoProfileRepository implements ProfileRepository {
   // if (user && this.redis.client) {
   //   await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
   // }
+  async findByUsername(username: string): Promise<User | null> {
+    const user = await UserModel.findOne({ username });
+    return user as User;
+  }
   async followUser(userId: string, followingUserId: string): Promise<ProfileSummary | null> {
     const user = await UserModel.findByIdAndUpdate(
       userId,
@@ -137,5 +143,41 @@ export class MongoProfileRepository implements ProfileRepository {
       profilePicture: user.profilePicture,
       followers: user.followers.length,
     })) as SearchUsers | null;
+  }
+  async updateProfile(userId: string, updatedData: object) :Promise<ProfileSummary | null> {
+    
+    const updatedUser = await UserModel.findByIdAndUpdate(userId, 
+      {$set: updatedData}, {new: true}
+    )
+
+    return updatedUser as ProfileSummary | null;
+    
+  }
+  async findFollowingUsers(userId: string): Promise<ProfileSummary[] | null> {
+    
+    const user = await UserModel.findById(userId).populate({
+      path: "following",
+      select: "_id username profilePicture"
+    })
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    return user.following as unknown as ProfileSummary[] | null
+
+  }
+
+  async findFollowedUsers(userId: string): Promise<ProfileSummary[] | null> {
+    
+    const user = await UserModel.findById(userId).populate({
+      path: "followers",
+      select: "_id username profilePicture"
+    })
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    return user.followers as unknown as ProfileSummary[] | null
+
   }
 }
