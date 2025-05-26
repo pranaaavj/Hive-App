@@ -3,7 +3,7 @@ import { IPost, Post } from '../../domain/entities/postEntity';
 import { Types } from 'mongoose';
 import { RedisClient } from '../../infrastructure/cache/redis';
 import { UserModel } from '../../infrastructure/model/user.model';
-
+import { PipelineStage } from 'mongoose';
 export interface PostRepository {
   save(post: Post): Promise<IPostModel>;
   findAll(userId: string): Promise<IPostModel[]>;
@@ -151,30 +151,52 @@ export class MongoPostRepository implements PostRepository {
     }
   }
 
-  async findUserPost(userId:string,page:number,limit:number):Promise<IPostModel[]>{
-    const cacheKey = `post:user:${userId}:page:${page}:limit:${limit}`
-    const cached = await this.redis.get(cacheKey)
-
-    if(cached){
-      return JSON.parse(cached)
+  async findUserPost(userId: string, page: number, limit: number): Promise<IPostModel[]> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error('Invalid user ID');
     }
-
-    const user = await UserModel.findById(userId).select('following')
-    const followingIds = user?.following || []
-
-    const posts = await PostModel.find({
-      isDeleted:false,
-      status:'active',
-      userId:{$in:[...followingIds,new Types.ObjectId(userId)]}
-    })
-    .sort({createdAt:-1})
-    .skip((page -1)* limit)
-    .limit(limit)
-    .populate('userId','username profilePicture')
-
-    if(this.redis.client){
-      await this.redis.setEx(cacheKey,JSON.stringify(posts),60)
+    const cacheKey = `post:user:${userId}:page:${page}:limit:${limit}`;
+   
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached) as IPostModel[];
+      }
+      try {
+          const user = await UserModel.findById(userId, { following: 1 }).lean<{ following: Types.ObjectId[] }>();
+         if (!user) {
+      return [];
+      }
+          const followingIds = [...user.following.map(id => new Types.ObjectId(id)), new Types.ObjectId(userId)];
+          const posts = await PostModel.aggregate([
+            {$match:{
+              userId:{$in:followingIds},
+              isDeleted:false,
+              status:'active'
+            },
+          },
+           { $lookup: { from: 'users', localField: 'userId', foreignField: '_id', as: 'user' } },
+          {$unwind:'$user'},
+          {
+            $project:{
+            userId: 1,
+            caption: 1,
+            imageUrls: 1,
+            likeCount: 1,
+            commentCount: 1,
+            createdAt: 1,
+            'user.username': 1,
+            'user.profilePicture': 1,
+              },
+          },
+          {$sort:{createdAt:-1}},
+          {$skip:page*limit},
+          {$limit:limit},
+          ])
+           await this.redis.setEx(cacheKey, JSON.stringify(posts), 60);
+          return posts;
+    } catch (error) {
+      console.warn('Error in findUserPost:', error);
+      return [];
     }
-    return posts
   }
 }

@@ -1,25 +1,20 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./basequery";
 
-interface User {
-  username: string;
-  profilePicture?: string;
-}
 
-interface Post {
+interface BackendPost {
   _id: string;
-  userId: User;
-  caption?: string;
+  user: { username: string; profilePicture?: string };
   imageUrls: string[];
+  caption: string;
   likeCount: number;
   commentCount: number;
   createdAt: string;
 }
-
 interface PostsResponse {
   success: boolean;
   message: string;
-  posts: Post[];
+  posts: BackendPost[];
 }
 
 export const postApi = createApi({
