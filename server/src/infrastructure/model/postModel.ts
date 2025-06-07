@@ -2,6 +2,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPostModel extends Document {
+  _id:mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   imageUrls: string[];
   likes: mongoose.Types.ObjectId[];

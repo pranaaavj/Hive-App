@@ -18,7 +18,6 @@ export interface User {
     id: string,
     username: string,
     email : string,
-
 }
 
 // src/types/index.ts
@@ -29,16 +28,3 @@ export interface Story {
   hasUnseenStory: boolean;
 }
 
-export interface Post {
-  id: string; // Maps to _id
-  user: {
-    username: string; // From user.username
-    profilePicture: string; // From user.profilePicture
-  };
-  image: string; // From imageUrls[0]
-  caption: string; // From caption
-  likes: number; // From likeCount
-  commentCount: number; // From commentCount
-  timestamp: string; // From createdAt
-  comments: { username: string; text: string }[]; // Optional, not in response
-}

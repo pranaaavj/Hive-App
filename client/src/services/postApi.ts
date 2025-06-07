@@ -1,21 +1,6 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./basequery";
-
-
-interface BackendPost {
-  _id: string;
-  user: { username: string; profilePicture?: string };
-  imageUrls: string[];
-  caption: string;
-  likeCount: number;
-  commentCount: number;
-  createdAt: string;
-}
-interface PostsResponse {
-  success: boolean;
-  message: string;
-  posts: BackendPost[];
-}
+import { PostsResponse } from "@/types/post";
 
 export const postApi = createApi({
   reducerPath: 'postApi',
@@ -27,8 +12,23 @@ export const postApi = createApi({
         params: { page, limit },
       }),
     }),
+    likePost:builder.mutation({
+      query:(postId)=>({
+        url:`/post/${postId}/like`,
+        method:'POST',
+        credentials:'include'
+      })
+    }),
+
+    unlikePost:builder.mutation({
+      query:(postId)=>({
+        url:`/post/${postId}/unlike`,
+        method:'POST',
+        credentials:'include'
+      })
+    })
   }),
 });
 
 
-export const {useGetHomeFeedQuery} = postApi
+export const {useGetHomeFeedQuery,useLikePostMutation,useUnlikePostMutation} = postApi

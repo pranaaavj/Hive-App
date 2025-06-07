@@ -7,7 +7,6 @@ export interface IComment {
   userId: string;
   content: string;
   parentCommentId?: string;
-  likeCount: number;
   depth: number;
   isDeleted: boolean;
   createdAt?: Date;
@@ -21,7 +20,6 @@ export class Comment {
     public userId: string,
     public content: string,
     public parentCommentId: string | undefined,
-    public likeCount: number,
     public depth: number,
     public isDeleted: boolean,
     public createdAt: Date,
@@ -39,7 +37,6 @@ export class Comment {
       data.userId!,
       data.content!,
       data.parentCommentId,
-      data.likeCount || 0,
       data.depth || 0,
       data.isDeleted || false,
       data.createdAt || new Date(),

@@ -1,35 +1,107 @@
-// src/infrastructure/websocket/socket.ts
 import { Server } from 'socket.io';
 import { CommentModel } from '../model/commentModel';
 
-export function setupWebSocket(httpServer: any) {
-  const io = new Server(httpServer, {
-    cors: { origin: '*' }, /// Adjust for production
-  });
+let io: Server | null = null;
 
-  io.on('connection', (socket) => {
-    socket.on('joinPost', (postId: string) => {
-      socket.join(postId);
-    });
-    socket.on('leavePost', (postId: string) => {
-      socket.leave(postId);
-    });
-  });
+function setupChangeStream() {
+  const changeStream = CommentModel.watch(
+    [
+      { 
+        $match: { 
+          $or: [
+            { operationType: 'insert' },
+            { 
+              operationType: 'update',
+              'updateDescription.updatedFields.isDeleted': true // Detect soft deletes
+            },
+            { operationType: 'delete' } 
+          ]
+        } 
+      }
+    ],
+    { fullDocument: 'updateLookup' }
+  );
 
-  const changeStream = CommentModel.watch([{ $match: { operationType: 'insert' } }]);
-  changeStream.on('change', (change) => {
+  changeStream.on('change', async (change) => {
+    const roomId = change.fullDocument?.postId?.toString() || 
+                  change.documentKey?.postId?.toString();
+
+    if (!roomId) return;
+
+    // Handle new comments/replies (existing logic)
     if (change.operationType === 'insert') {
       const comment = change.fullDocument;
-      io.to(comment.postId.toString()).emit('newComment', {
-        _id: comment._id,
-        postId: comment.postId,
-        userId: comment.userId,
-        content: comment.content,
-        parentCommentId: comment.parentCommentId,
-        createdAt: comment.createdAt,
+      const populatedComment = await CommentModel.findById(comment._id)
+        .populate('userId', 'username profilePicture')
+        .lean();
+      
+      if (!populatedComment) return;
+      
+      if (populatedComment.parentCommentId) {
+        io?.to(roomId).emit('newReply', populatedComment);
+      } else {
+        io?.to(roomId).emit('newComment', populatedComment);
+      }
+    }
+    // Handle soft deletes
+    else if (
+      change.operationType === 'update' && 
+      change.updateDescription?.updatedFields?.isDeleted
+    ) {
+      io?.to(roomId).emit('commentSoftDeleted', {
+        commentId: change.documentKey._id.toString(),
+        updatedContent: '[Comment deleted]', // Or fetch from DB
       });
     }
   });
 
+  changeStream.on('error', (err) => {
+    console.error('❌ Comment Change Stream Error:', err);
+    setTimeout(setupChangeStream, 5000);
+  });
+
+  changeStream.on('close', () => {
+    console.log('🔁 Change stream closed. Reconnecting...');
+    setTimeout(setupChangeStream, 5000);
+  });
+}
+
+export function setupWebSocket(httpServer: any): Server {
+  io = new Server(httpServer, {
+    cors: {
+      origin: ['http://localhost:5173', 'http://frontend:5173'],
+      credentials: true,
+    },
+  });
+
+  io.on('connection', (socket) => {
+    console.log(`✅ Client connected: ${socket.id}`);
+
+    socket.on('joinPost', (postId: string) => {
+      if (!postId) return socket.emit('error', 'Invalid postId');
+      socket.join(postId);
+      console.log(`📌 Socket ${socket.id} joined room: ${postId}`);
+    });
+
+    socket.on('leavePost', (postId: string) => {
+      socket.leave(postId);
+      console.log(`📤 Socket ${socket.id} left room: ${postId}`);
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`❎ Client disconnected: ${socket.id}`);
+    });
+
+    socket.on('error', (err) => {
+      console.error('⚠️ Socket error:', err);
+    });
+  });
+
+  setupChangeStream();
+  return io;
+}
+
+export function getIO(): Server {
+  if (!io) throw new Error('❌ Socket.IO not initialized');
   return io;
 }

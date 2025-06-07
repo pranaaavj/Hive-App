@@ -3,8 +3,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Heart, MessageCircle, Send, MoreHorizontal } from "lucide-react";
-import { Post } from "@/types/auth";
-
+import { Post } from "@/types/post";
+import { socket } from "@/lib/socket";
+import { useEffect, useState } from "react";
+import { useLikePostMutation,useUnlikePostMutation } from "@/services/postApi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store/store";
+import { CommentModal } from "./modals/CommentModal";
 interface PostCardProps {
   post: Post;
   // onLike: (postId: string) => void;
@@ -14,6 +19,57 @@ interface PostCardProps {
 }
 
 export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCardProps) {
+   const currentUserId = useSelector((state: RootState) => state.user.user?.id);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [likePost] = useLikePostMutation();
+  const [unlikePost] = useUnlikePostMutation();
+  const[showComments,setShowComments] = useState(false)
+
+   useEffect(() => {
+    if (currentUserId) {
+      setIsLiked(post.likes.includes(currentUserId));
+    }
+  }, [currentUserId, post.likes]);
+
+
+  useEffect(()=>{
+    socket.emit('joinPost',post._id)
+
+    socket.on('postLiked',(data)=>{
+      if(data.postId === post._id){
+        setLikeCount(data.likeCount)
+      }
+    })
+
+    socket.on('unlikePost',(data)=>{
+      if(data.postId===post._id){
+        setLikeCount(data.likeCount);
+      }
+    })
+
+    return()=>{
+      socket.emit('leavePost',post._id)
+      socket.off('postLiked')
+      socket.off('postUnliked')
+    }
+  },[post._id])
+
+  const handleLike = async()=>{
+    try {
+      if(isLiked){
+        await unlikePost(post._id)
+        setIsLiked(false)
+         setLikeCount((prev) => prev - 1); 
+      }else{
+        await likePost(post._id)
+        setIsLiked(true)
+         setLikeCount((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Failed to like/unlike:", error);
+    }
+  }
   return (
     <Card className="overflow-hidden shadow-md bg-white">
       <CardHeader className="flex flex-row items-center justify-between py-2 px-3">
@@ -41,15 +97,15 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
       <CardFooter className="flex flex-col items-start p-3 space-y-2">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
-            {/* <Button
+            <Button
               variant="ghost"
               size="icon"
               className="rounded-full h-8 w-8 p-1"
-              onClick={() => onLike(post.id)}
+              onClick={handleLike}
             >
               <Heart className={`h-5 w-5 ${isLiked ? "fill-amber-500 text-amber-500" : ""}`} />
-            </Button> */}
-            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 p-1">
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 p-1" onClick={()=>setShowComments(true)}>
               <MessageCircle className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 p-1">
@@ -67,7 +123,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
         </div>
 
         <div>
-          <p className="font-semibold text-sm">{post.likes.toLocaleString()} likes</p>
+          <p className="font-semibold text-sm">{likeCount} likes</p>
         </div>
 
         <div>
@@ -76,6 +132,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
           </p>
         </div>
       </CardFooter>
+       <CommentModal open={showComments} onClose={() => setShowComments(false)} post={post} />
     </Card>
   );
 }

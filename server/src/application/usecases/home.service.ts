@@ -5,7 +5,7 @@ import { ApiError } from "../../utils/apiError"
 export class HomeService{
     constructor(private postRepository:PostRepository){}
 
-    async getHomeFeed(userId:string,page:number,limit:number):Promise<IPostModel[]>{
+    async getHomeFeed(userId:string,page:number,limit:number):Promise<{posts:IPostModel[];hasMore:boolean}>{
         try {
             return this.postRepository.findUserPost(userId,page,limit)
         } catch (error) {
