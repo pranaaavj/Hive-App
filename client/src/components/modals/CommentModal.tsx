@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Post } from "@/types/post";
 import { useState } from "react";
+import { socket } from "@/lib/socket";
+import { useEffect } from "react";
 import {
   useGetCommentsByPostIdQuery,
   useCreateCommentMutation,
@@ -29,18 +31,36 @@ interface CommentModalProps {
 
 export const CommentModal = ({ open, onClose, post }: CommentModalProps) => {
   const [newComment, setNewComment] = useState("");
-  const { data: commentsData, isLoading, isError } = useGetCommentsByPostIdQuery({
+  const { data: commentsData, isLoading, isError,refetch  } = useGetCommentsByPostIdQuery({
     postId: post._id,
   });
 
   const [createComment, { isLoading: isCreating }] = useCreateCommentMutation();
   const [deleteComment] = useDeleteCommentMutation();
   const currentUserId = useSelector((state: RootState) => state.user.user?.id);
+  useEffect(() => {
+  if (!post._id) return;
+  
+  socket.emit("joinPost", post._id);
+
+
+  socket.on("commentAdded", (data) => {
+    if (data.postId === post._id) {
+      refetch(); 
+    }
+  });
+
+  return () => {
+    socket.emit("leavePost", post._id);
+    socket.off("commentAdded");
+  };
+}, [post._id,refetch]);
 
   const handleSubmit = async () => {
     if (!newComment.trim()) return;
     try {
       await createComment({ postId: post._id, content: newComment }).unwrap();
+      socket.emit("newComment", { postId: post._id });
       setNewComment("");
     } catch (error) {
       console.error("Failed to create comment:", error);

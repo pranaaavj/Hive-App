@@ -9,8 +9,13 @@ import { MainLayout } from './components/layouts/MainLayout'
 import { ProfilePage } from './pages/user/ProfilePage'
 import { ProtectedRoute } from './utils/ProtectedRoute'
 import {ProfileEditPage} from './pages/user/ProfielEditPage'
+import { setupPostSocketListeners } from './lib/socketListeners'
+import { useEffect } from 'react'
 
 function App() {
+   useEffect(() => {
+    setupPostSocketListeners(); // ✅ Setup global socket event handlers ONCE
+  }, []);
   return (
     <Routes>
       <Route path='/register' element={<RegisterPage />} />

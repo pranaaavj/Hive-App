@@ -32,28 +32,11 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
     }
   }, [currentUserId, post.likes]);
 
+  useEffect(() => {
+  setLikeCount(post.likeCount); // whenever parent updates via RTK Query, sync it here
+}, [post.likeCount]);
 
-  useEffect(()=>{
-    socket.emit('joinPost',post._id)
-
-    socket.on('postLiked',(data)=>{
-      if(data.postId === post._id){
-        setLikeCount(data.likeCount)
-      }
-    })
-
-    socket.on('unlikePost',(data)=>{
-      if(data.postId===post._id){
-        setLikeCount(data.likeCount);
-      }
-    })
-
-    return()=>{
-      socket.emit('leavePost',post._id)
-      socket.off('postLiked')
-      socket.off('postUnliked')
-    }
-  },[post._id])
+ 
 
   const handleLike = async()=>{
     try {
