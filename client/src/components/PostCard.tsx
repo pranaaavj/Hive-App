@@ -2,7 +2,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Heart, MessageCircle, Send, MoreHorizontal } from "lucide-react";
+import { MessageCircle, Send, MoreHorizontal } from "lucide-react";
 import { Post } from "@/types/auth";
 
 interface PostCardProps {

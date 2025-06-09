@@ -1,7 +1,4 @@
-"use client"
-
 import type React from "react"
-
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Home, Compass, Bell, Send, PlusSquare, User, BookmarkIcon, Settings, LogOut, Search, X } from "lucide-react"
@@ -18,6 +15,9 @@ import {
 import { NotificationsSidebar } from "./NotificartionsSidebar"
 import { useSearchUsersQuery } from "@/services/authApi"
 import { useAppSelector } from "@/hooks/reduxHooks"
+import { useLogoutUserMutation } from "@/services/authApi"
+import { useDispatch } from "react-redux"
+import { logout } from "@/redux/slices/userSlice"
 
 interface AppSidebarProps {
   onCreateClick?: () => void
@@ -25,6 +25,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({ onCreateClick }: AppSidebarProps) {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   const userId = useAppSelector((state) => state.user.user?.id)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -33,6 +34,7 @@ export function AppSidebar({ onCreateClick }: AppSidebarProps) {
   const { data: users = [], isLoading } = useSearchUsersQuery(query, {
     skip: query?.length < 2,
   })
+  const [logoutUser] = useLogoutUserMutation()
 
   // Show results when query is valid
   useEffect(() => {
@@ -58,6 +60,15 @@ export function AppSidebar({ onCreateClick }: AppSidebarProps) {
   const toggleNotifications = (e: React.MouseEvent) => {
     e.preventDefault()
     setNotificationsOpen(!notificationsOpen)
+  }
+  const handleLogout = async() => {
+    try {
+      await logoutUser().unwrap()
+      dispatch(logout())
+      navigate("/login")
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
   }
 
   return (
@@ -243,10 +254,10 @@ export function AppSidebar({ onCreateClick }: AppSidebarProps) {
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Logout" className="py-3 text-sm">
-                <Link to="/logout" className="flex items-center gap-3 font-medium">
+                <button onClick={handleLogout} className="flex items-center gap-3 font-medium">
                   <LogOut className="h-5 w-5" />
                   <span>Logout</span>
-                </Link>
+                </button>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

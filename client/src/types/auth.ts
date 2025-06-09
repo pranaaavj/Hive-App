@@ -23,11 +23,20 @@ export interface User {
 
 // src/types/index.ts
 export interface Story {
-  id: number;
-  username: string;
-  avatar: string;
-  hasUnseenStory: boolean;
+  _id: string;
+  mediaUrl: string;
+  mediaType: 'image' | 'video';
+  createdAt: string;
+  isSeen: boolean;
 }
+
+export interface UserStoryGroup {
+  userId: string;
+  username: string;
+  profilePicture: string;
+  stories: Story[];
+}
+
 
 export interface Post {
   id: string; // Maps to _id
