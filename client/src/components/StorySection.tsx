@@ -1,53 +1,158 @@
-// src/components/StorySection.tsx
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PlusCircle } from "lucide-react";
-import { Story } from "@/types/auth";
+import React, { useMemo, useRef, useState } from "react";
+import { AddStoryModal } from "./modals/AddStroryModal";
+import {
+  useGetStoriesQuery,
+  useMarkStorySeenMutation,
+  useMyStoriesQuery,
+} from "@/services/postApi"
+import { StoriesModal } from "./modals/StoriesModal";
 
-interface StorySectionProps {
-  stories: Story[];
-}
+export function StorySection() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedStory, setSelectedStory] = useState<string | null>(null);
+  const [addStoryModalOpen, setAddStoryModalOpen] = useState(false);
+  const { data: stories, isLoading, refetch } = useGetStoriesQuery(undefined);
+  const { data: myStories, isLoading: myStoryLoading, refetch: refetchMyStories } =
+    useMyStoriesQuery(undefined);
+  const [isStoriesOpen, setIsStoriesOpen] = useState(false);
+  const [userIndex, setUserIndex] = useState(0);
+  const [markStorySeen] = useMarkStorySeenMutation();
 
-export function StorySection({ stories }: StorySectionProps) {
+  const handleAddStory = () => {
+    setAddStoryModalOpen(true);
+  };
+
+  const handleOpenStories = (index: number) => {
+    setUserIndex(index);
+    setIsStoriesOpen(true);
+  };
+  const combinedStories = useMemo(() => {
+    if (!myStories || !stories) return [];
+
+    return [
+      {
+        userId: myStories.userId,
+        username: myStories.username,
+        profilePicture: myStories.profilePicture,
+        stories: myStories.stories,
+      },
+      ...stories,
+    ];
+  }, [myStories, stories]);
+
+  const handleCloseStories = async() => {
+    setIsStoriesOpen(false);
+    setUserIndex(0);
+    try {
+      await Promise.all([refetch(), refetchMyStories()]);
+    } catch (error) {
+      console.error("Error while refetching stories:", error);
+    }
+  };
+
+  const handleMarkStorySeen = async (storyId: string) => {
+    try {
+      await markStorySeen({ storyId }).unwrap();
+    } catch (error) {
+      console.error("Failed to mark story as seen:", error);
+    }
+  };
+
   return (
-    <section className="bg-white rounded-xl shadow-sm mb-4">
-      <div className="p-3">
-        <ScrollArea className="w-full">
-          <div className="flex gap-4 py-2">
-            <div className="flex flex-col items-center space-y-1 w-20">
-              <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-200 to-amber-500 p-[2px]">
-                  <Avatar className="w-full h-full border-2 border-white">
-                    <AvatarImage src="/placeholder.svg?height=80&width=80" alt="Your Story" />
-                    <AvatarFallback>YS</AvatarFallback>
-                  </Avatar>
+    <>
+      <section className="bg-white rounded-xl shadow-sm mb-4">
+        <div className="p-3">
+          <ScrollArea className="w-full">
+            <div className="flex gap-4 py-2">
+              {/* Your Story */}
+              
+                <div className="flex flex-col items-center space-y-1 w-20">
+                  <div className="relative">
+                    <div
+                      className={`w-16 h-16 rounded-full p-[2px] cursor-pointer ${
+                        myStories?.stories?.length > 0 ?
+                        myStories?.stories?.every((story) => story?.isSeen) ? 
+                        "bg-gray-300" : "bg-gradient-to-br from-amber-300 to-amber-500"
+                        : ""
+                      }`}
+                      onClick={() => handleOpenStories(0)}
+                    >
+                      <Avatar className="w-full h-full border-2 border-white">
+                        <AvatarImage
+                          src={myStories?.profilePicture}
+                          alt="Your Story"
+                        />
+                        <AvatarFallback>
+                          {myStories?.username?.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div
+                      onClick={handleAddStory}
+                      className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-md cursor-pointer"
+                    >
+                      <PlusCircle className="w-5 h-5 text-amber-500" />
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium text-center truncate w-full">
+                    Your Story
+                  </span>
                 </div>
-                <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-md">
-                  <PlusCircle className="w-5 h-5 text-amber-500" />
-                </div>
-              </div>
-              <span className="text-xs font-medium text-center truncate w-full">Your Story</span>
-            </div>
+            
 
-            {stories.slice(1).map((story) => (
-              <div key={story.id} className="flex flex-col items-center space-y-1 w-20">
+              {/* Following Users */}
+              {stories?.map((user, index) => (
                 <div
-                  className={`w-16 h-16 rounded-full ${
-                    story.hasUnseenStory ? "bg-gradient-to-br from-amber-300 to-amber-500" : "bg-gray-200"
-                  } p-[2px]`}
+                  key={user?.userId}
+                  className="flex flex-col items-center space-y-1 w-20"
                 >
-                  <Avatar className="w-full h-full border-2 border-white">
-                    <AvatarImage src={story.avatar || "/placeholder.svg"} alt={story.username} />
-                    <AvatarFallback>{story.username.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <div
+                    className={`w-16 h-16 rounded-full p-[2px] cursor-pointer ${
+                      user?.stories?.every((story) => story?.isSeen)
+                        ? "bg-gray-300"
+                        : "bg-gradient-to-br from-amber-300 to-amber-500"
+                    }`}
+                    onClick={() => handleOpenStories(index + 1)} 
+                  >
+                    <Avatar className="w-full h-full border-2 border-white">
+                      <AvatarImage
+                        src={user?.profilePicture || "/placeholder.svg"}
+                        alt={user?.username}
+                      />
+                      <AvatarFallback>
+                        {user?.username?.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <span className="text-xs font-medium text-center truncate w-full">
+                    {user?.username}
+                  </span>
                 </div>
-                <span className="text-xs font-medium text-center truncate w-full">{story.username}</span>
-              </div>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
-      </div>
-    </section>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+      </section>
+
+      <AddStoryModal
+        isOpen={addStoryModalOpen}
+        setIsOpen={setAddStoryModalOpen}
+      />
+
+      {stories && (
+        <StoriesModal
+          isOpen={isStoriesOpen}
+          onClose={handleCloseStories} 
+          userStoriesData={combinedStories}
+          initialUserIndex={userIndex} 
+          initialStoryIndex={0}
+          onMarkStorySeen={handleMarkStorySeen} 
+        />
+      )}
+    </>
   );
 }

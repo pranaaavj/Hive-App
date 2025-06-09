@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import {
   Calendar,
   Edit,
@@ -24,6 +24,8 @@ import {
 
 import { useGetProfileDetailsQuery } from "@/services/authApi";
 import { FollowingFollowersModal } from "@/components/modals/FollowingFollowersModal";
+import { useMyStoriesQuery, useMarkStorySeenMutation } from "@/services/postApi";
+import { StoriesModal } from "@/components/modals/StoriesModal";
 
 // Types for our data models
 interface User {
@@ -124,6 +126,7 @@ export function ProfilePage() {
   const user = useAppSelector((state) => state.user.user?.id);
   const { userId } = useParams();
   const { data, isLoading } = useGetUserPostsQuery(userId);
+  const { data: myStories, refetch: refetchStories } = useMyStoriesQuery(undefined);
   const {
     data: profile,
     isLoading: isProfileLoading,
@@ -148,6 +151,10 @@ export function ProfilePage() {
     "followers"
   );
 
+  const [openStoriesModal, setOpenStoriesModal] = useState(false)
+   const [markStorySeen] = useMarkStorySeenMutation();
+
+
   const openFollowersModal = () => {
     setModalType("followers");
     setModalOpen(true);
@@ -170,7 +177,6 @@ export function ProfilePage() {
       setProfileImage(profile.profilePicture);
     }
 
-    // Update local follow state from profile data
     if (profile) {
       setIsFollowingState(profile.isFollowing || false);
       setIsFollowedState(profile.isFollowed || false);
@@ -183,29 +189,22 @@ export function ProfilePage() {
     return "Follow";
   };
 
-  // Handle follow/unfollow action
   const toggleFollow = async () => {
     if (!userId || user === userId) return;
 
     try {
       if (isFollowingState) {
-        // Optimistically update UI
         setIsFollowingState(false);
 
-        // Call API to unfollow
         await unfollowUser(userId).unwrap();
       } else {
-        // Optimistically update UI
         setIsFollowingState(true);
 
-        // Call API to follow
         await followUser(userId).unwrap();
       }
 
-      // Refetch profile data to ensure consistency
       refetchProfile();
     } catch (error) {
-      // Revert optimistic updates on error
       setIsFollowingState(!isFollowingState);
       console.error("Failed to update follow status:", error);
     }
@@ -219,6 +218,17 @@ export function ProfilePage() {
     })}`;
   };
 
+  const handleOpenStories = () => {
+    if(myStories && myStories?.stories.length > 0) {
+      setOpenStoriesModal(true)
+    }
+  }
+
+  const handleCloseStories = async() => {
+    setOpenStoriesModal(false);
+    await refetchStories()
+  };
+
   if (isLoading || isProfileLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -226,6 +236,15 @@ export function ProfilePage() {
       </div>
     );
   }
+
+  const handleMarkStorySeen = async (storyId: string) => {
+    try {
+      await markStorySeen({ storyId }).unwrap();
+    } catch (error) {
+      console.error("Failed to mark story as seen:", error);
+    }
+  };
+
 
   return (
     <div className="max-w-5xl mx-auto bg-gradient-to-b from-amber-50 to-white p-4 sm:pshadow-sm-6 md:p-8 space-y-6 rounded-lg ">
@@ -235,11 +254,19 @@ export function ProfilePage() {
           {/* Left Column: Profile Image */}
           <div className="flex-shrink-0 relative group self-start">
             <div
-              className={`relative rounded-full overflow-hidden h-32 w-32 ring-4 ring-white shadow-lg`}
+            
+              className={`rounded-full overflow-hidden p-[3px] h-32 w-32  ${
+                myStories?.stories?.length > 0
+                  ? myStories?.stories?.every((story) => story.isSeen)
+                    ? "bg-gray-400 cursor-pointer"
+                    : "cursor-pointer bg-gradient-to-br from-amber-300 to-amber-500"
+                  : ""
+              }`}
+              onClick={() => handleOpenStories()}
             >
-              <Avatar className="h-32 w-32">
+              <Avatar className="w-full h-full border-2 border-white">
                 <AvatarImage
-                  src={profile?.profilePicture || "/placeholder.svg"}
+                  src={profileImage || "/placeholder.svg"}
                   alt={profile?.username}
                 />
                 <AvatarFallback>{profile?.username.charAt(0)}</AvatarFallback>
@@ -414,7 +441,7 @@ export function ProfilePage() {
                 >
                   <CardContent className="p-0">
                     {post?.imageUrls && post.imageUrls.length > 0 && (
-                      <div className="relative aspect-square w-full">
+                      <div className="relative aspect-[4/5] overflow-hidden w-full">
                         <img
                           src={post.imageUrls[0] || "/placeholder.svg"}
                           alt="Post image"
@@ -544,7 +571,7 @@ export function ProfilePage() {
           </div>
         </TabsContent>
       </Tabs>
-      {userId && modalOpen &&(
+      {userId && modalOpen && (
         <FollowingFollowersModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -552,6 +579,16 @@ export function ProfilePage() {
           userId={userId}
         />
       )}
+      { openStoriesModal && 
+      <StoriesModal
+        isOpen={openStoriesModal}
+        onClose={handleCloseStories}
+        userStoriesData={[myStories]}
+        initialUserIndex={0}
+        initialStoryIndex={0}
+        onMarkStorySeen={handleMarkStorySeen} 
+        />}
+
     </div>
   );
 }

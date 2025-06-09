@@ -34,6 +34,13 @@ export const authApi = createApi({
         body: { email },
       }),
     }),
+    logoutUser: builder.mutation<void, void>({
+      query: () => ({
+        url: "auth/logout",
+        method: "POST",
+        credentials: "include"
+      })
+    }),
     addPost: builder.mutation({
       query: ({ images, caption }) => ({
         url: "post/add-post",
@@ -100,7 +107,7 @@ export const authApi = createApi({
         url: `/profile/followers?userId=${userId}`,
         method: "GET"
       })
-    })
+    })    
   }),
 });
 
@@ -109,6 +116,7 @@ export const {
   useRegisterMutation,
   useResetPasswordMutation,
   useForgetPasswordMutation,
+  useLogoutUserMutation,
   useAddPostMutation,
   useGetUserPostsQuery,
   useAddProfilePictureMutation,

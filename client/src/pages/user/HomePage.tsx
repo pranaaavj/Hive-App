@@ -4,27 +4,17 @@
 import { useEffect, useRef, useState } from "react";
 import { StorySection } from "@/components/StorySection"; 
 import { PostCard } from "@/components/PostCard";
-import { Story } from "@/types/auth";
 import { Post } from "@/types/post";
 import { useGetHomeFeedQuery } from "@/services/postApi";
 
 export function HomePage() {
+
 
     const [page,setPage] = useState(1)
     const[allPosts,setAllPosts]=useState<Post[]>([])
     const [hasMore,setHasMore] = useState(true)
     const loaderRef = useRef<HTMLDivElement>(null);
     const { isError, isLoading, data ,isFetching} = useGetHomeFeedQuery({ page: 1, limit: 5 });
-  const [stories] = useState<Story[]>([
-    { id: 1, username: "yourstory", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: false },
-    { id: 2, username: "jamesdoe", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
-    { id: 3, username: "emilywong", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
-    { id: 4, username: "davidjones", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
-    { id: 5, username: "sophialee", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
-    { id: 6, username: "mikebrown", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
-    { id: 7, username: "alexsmith", avatar: "/placeholder.svg?height=80&width=80", hasUnseenStory: true },
-  ]);
-
  useEffect(() => {
     if (data) {
       const newPosts = data.posts.map(post => ({
@@ -62,13 +52,14 @@ export function HomePage() {
     };
   }, [hasMore, isFetching]);
 
+
   
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Error loading feed</div>;
 
   return (
     <>
-      <StorySection stories={stories} />
+      <StorySection/>
       <div className="h-[calc(100vh-140px)] overflow-auto pr-2">
         <div className="space-y-4">
           {allPosts.map((post) => (

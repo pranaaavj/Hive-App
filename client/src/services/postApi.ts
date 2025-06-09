@@ -1,15 +1,16 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./basequery";
 import { PostsResponse } from "@/types/post";
+import { UserStoryGroup } from "@/types/auth";
 
- export const postApi = createApi({
-  reducerPath: 'postApi',
+export const postApi = createApi({
+  reducerPath: "postApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Post'], // ✅ Add this
+  tagTypes: ['Post'],
   endpoints: (builder) => ({
     getHomeFeed: builder.query<PostsResponse, { page: number; limit: number }>({
       query: ({ page, limit }) => ({
-        url: '/home/feed',
+        url: "/home/feed",
         params: { page, limit },
       }),
       providesTags: (result) =>
@@ -35,8 +36,44 @@ import { PostsResponse } from "@/types/post";
       }),
       invalidatesTags: (result, error, postId) => [{ type: 'Post', id: postId }],
     }),
+
+    addStory: builder.mutation({
+      query: ({ fileUrl, fileType }) => ({
+        url: "/home/add-story",
+        method: "POST",
+        body: { fileUrl, fileType },
+      }),
+    }),
+
+    getStories: builder.query<UserStoryGroup[], void>({
+      query: () => ({
+        url: "/home/stories",
+        method: "GET",
+      }),
+    }),
+
+    markStorySeen: builder.mutation<void, { storyId: string }>({
+      query: ({ storyId }) => ({
+        url: `/home/story-seen?storyId=${storyId}`,
+        method: "PATCH",
+      }),
+    }),
+
+    myStories: builder.query({
+      query: () => ({
+        url: "/home/my-story",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
-
-export const {useGetHomeFeedQuery,useLikePostMutation,useUnlikePostMutation} = postApi
+export const {
+  useGetHomeFeedQuery,
+  useLikePostMutation,
+  useUnlikePostMutation,
+  useAddStoryMutation,
+  useGetStoriesQuery,
+  useMarkStorySeenMutation,
+  useMyStoriesQuery
+} = postApi;

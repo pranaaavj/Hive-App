@@ -10,6 +10,8 @@ import { useLikePostMutation,useUnlikePostMutation } from "@/services/postApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { CommentModal } from "./modals/CommentModal";
+
+
 interface PostCardProps {
   post: Post;
   // onLike: (postId: string) => void;
