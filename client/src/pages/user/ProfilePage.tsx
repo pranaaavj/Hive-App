@@ -432,14 +432,14 @@ export function ProfilePage() {
         </TabsList>
 
         <TabsContent value="posts" className="mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1">
             {posts?.length > 0 ? (
               posts.map((post: Post) => (
-                <Card
+                <div
                   key={post?._id}
                   className="overflow-hidden group hover:shadow-md transition-all duration-300 border border-gray-200"
                 >
-                  <CardContent className="p-0">
+                  <div className="p-0">
                     {post?.imageUrls && post.imageUrls.length > 0 && (
                       <div className="relative aspect-[4/5] overflow-hidden w-full">
                         <img
@@ -461,11 +461,9 @@ export function ProfilePage() {
                         </div>
                       </div>
                     )}
-                    <div className="p-3">
-                      <p className="text-sm line-clamp-2">{post.caption}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    
+                  </div>
+                </div>
               ))
             ) : (
               <div className="col-span-full py-12 text-center text-muted-foreground">

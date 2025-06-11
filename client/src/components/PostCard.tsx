@@ -56,7 +56,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
     }
   }
   return (
-    <Card className="overflow-hidden shadow-md bg-white">
+    <Card className="max-w-[500px] mx-auto p-4 overflow-hidden  shadow-md bg-white">
       <CardHeader className="flex flex-row items-center justify-between py-2 px-3">
         <div className="flex items-center gap-2">
           <Avatar className="w-8 h-8 border-2 border-amber-200">
@@ -74,7 +74,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="w-full aspect-[4/3]">
+        <div className="w-full aspect-[4/5]">
           <img src={post.image || "/placeholder.svg"} alt="Post" className="object-cover w-full h-full" />
         </div>
       </CardContent>

@@ -6,7 +6,7 @@ import { UserStoryGroup } from "@/types/auth";
 export const postApi = createApi({
   reducerPath: "postApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Post'],
+  tagTypes: ['Post', "MyStory"],
   endpoints: (builder) => ({
     getHomeFeed: builder.query<PostsResponse, { page: number; limit: number }>({
       query: ({ page, limit }) => ({
@@ -43,6 +43,7 @@ export const postApi = createApi({
         method: "POST",
         body: { fileUrl, fileType },
       }),
+      invalidatesTags: ["MyStory"]
     }),
 
     getStories: builder.query<UserStoryGroup[], void>({
@@ -64,6 +65,7 @@ export const postApi = createApi({
         url: "/home/my-story",
         method: "GET",
       }),
+      providesTags: ["MyStory"]
     }),
   }),
 });
