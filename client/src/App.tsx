@@ -11,6 +11,7 @@ import { ProtectedRoute } from './utils/ProtectedRoute'
 import {ProfileEditPage} from './pages/user/ProfielEditPage'
 import { setupPostSocketListeners } from './lib/socketListeners'
 import { useEffect } from 'react'
+import MessagesPage from './pages/user/MessagesPage'
 
 function App() {
    useEffect(() => {
@@ -32,6 +33,7 @@ function App() {
         <Route path="/home" element={<HomePage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path='/profile/edit/:userId' element={<ProfileEditPage />} />
+        <Route path='/messages' element={<MessagesPage />} />
       </Route>
     </Routes>
   )

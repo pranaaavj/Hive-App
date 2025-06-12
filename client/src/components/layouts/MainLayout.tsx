@@ -9,26 +9,49 @@ export const MainLayout: React.FC = () => {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const location = useLocation();
 
-  const pathsWithoutRightSidebar = ['/profile/:userId','profile/edit/:userId', '/messages', '/settings'];
+  
+  const pathsWithoutRightSidebar = ['/profile/:userId', 'profile/edit/:userId', '/messages', '/settings'];
 
-const isPathWithoutSidebar = pathsWithoutRightSidebar.some(path =>
-  matchPath({ path, end: true }, location.pathname)
-);
 
-const showRightSidebar = !isPathWithoutSidebar;
+  const minimalSidebarPages = ['/create', '/messages', '/settings'];
+  const isMinimalPage = minimalSidebarPages.includes(location.pathname)
+
+
+  const isPathWithoutRightSidebar = pathsWithoutRightSidebar.some(path =>
+    matchPath({ path, end: true }, location.pathname)
+  );
+
+  const isMinimalSidebarPath = minimalSidebarPages.some(path => {
+
+    if (path === location.pathname) return true;
+    
+    return matchPath({ path, end: false }, location.pathname);
+  });
+
+  const showRightSidebar = !isPathWithoutRightSidebar;
+  
+  const sidebarWidth = isMinimalSidebarPath ? 80 : 256; 
+  const sidebarWidthClass = isMinimalSidebarPath ? "w-20" : "w-64";
+
   return (
     <SidebarProvider>
       <main className="relative h-screen w-full overflow-hidden">
         {/* Left Sidebar */}
-        <div className="hidden xl:flex w-[240px] bg-white border-r border-light-4">
-          <AppSidebar onCreateClick={() => setIsCreatePostModalOpen(true)} />
+        <div className={`hidden xl:flex ${sidebarWidthClass} bg-white border-r border-light-4 fixed left-0 top-0 h-full z-10`}>
+          <AppSidebar 
+            onCreateClick={() => setIsCreatePostModalOpen(true)} 
+            minimalMode={isMinimalSidebarPath} 
+          />
         </div>
         
         {/* Main Content */}
         <div 
-          className={`flex-1 h-full overflow-y-auto px-4 md:px-8 bg-amber-50 xl:px-12 py-6 xl:ml-[240px] ${
+          className={`flex-1 h-full overflow-y-auto ${isMinimalPage ? "" : "px-4 md:px-8 xl:px-12 py-6"}  bg-amber-50  transition-all duration-300 ease-in-out ${
             showRightSidebar ? "xl:mr-[300px]" : ""
           }`}
+          style={{
+            marginLeft: window.innerWidth >= 1280 ? `${sidebarWidth}px` : '0'
+          }}
         >
           <Outlet />
         </div>

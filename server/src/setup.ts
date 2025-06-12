@@ -14,6 +14,11 @@ import { UserService } from "./application/usecases/user.service";
 import { HomeController } from "./api/user/userControllers/homeController";
 import { HomeService } from "./application/usecases/home.service";
 import { MongoStoryRespository } from "./application/repositories/storyRepository";
+import { MongoChatRepository } from "./application/repositories/chatRepository";
+import { ChatService } from "./application/usecases/chatService";
+import { MongoMessageRepository } from "./application/repositories/messageRepository";
+import { ChatController } from "./api/user/userControllers/chatController";
+
 
 
     const userRepository = new MongoUserRepository()
@@ -34,9 +39,17 @@ import { MongoStoryRespository } from "./application/repositories/storyRepositor
     const profileController = new ProfileControler(profileService)
 
 
-const storyRepository = new MongoStoryRespository()
-const homeService = new HomeService(postRepository,storyRepository)
-const homeController = new HomeController(homeService)
+    const storyRepository = new MongoStoryRespository()
+    const homeService = new HomeService(postRepository,storyRepository)
+    const homeController = new HomeController(homeService)
+
+
+    const chatRepository = new MongoChatRepository()
+    const messageRepository = new MongoMessageRepository()
+    const chatService = new ChatService(chatRepository,messageRepository,userRepository)
+    const chatController = new ChatController(chatService)
+
+
 
 
     export {
@@ -44,5 +57,6 @@ const homeController = new HomeController(homeService)
         postController,
         commentController,
         profileController,
-        homeController
+        homeController,
+        chatController
     }

@@ -1,10 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CommentService } from '../../../application/usecases/comment.service';
 import { ApiError } from '../../../utils/apiError';
-
-interface RequestWithUser extends Request {
-  user?: { userId: string; email: string };
-}
+import { RequestWithUser } from '../../../types/RequestWithUser';
 
 export class CommentController {
   constructor(private commentService: CommentService) {}
