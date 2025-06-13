@@ -5,6 +5,7 @@ import { ChatRepository } from '../repositories/chatRepository';
 import { MessageRepository } from '../repositories/messageRepository';
 import { IChat } from '../../infrastructure/model/ChatModel';
 import { UserRepository } from '../repositories/user.repository';
+import { PaginatedMessages } from '../../infrastructure/model/messageModel';
 
 export class ChatService {
   constructor(
@@ -56,6 +57,10 @@ export class ChatService {
     );
   
     return formattedChats;
+  }
+
+  async getMessagesByChatId(chatId:string,page:number,limit:number) : Promise<PaginatedMessages>{
+     return await this.messageRepository.findMessagesByChatId(chatId,page,limit)
   }
   
 }

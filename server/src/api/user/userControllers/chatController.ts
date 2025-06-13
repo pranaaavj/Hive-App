@@ -2,7 +2,7 @@ import { NextFunction } from 'express';
 import { ChatService } from '../../../application/usecases/chatService';
 import { RequestWithUser } from '../../../types/RequestWithUser';
 import { ApiError } from '../../../utils/apiError';
-import { Response } from 'express';
+import { Response,Request } from 'express';
 
 export class ChatController {
   constructor(private chatService: ChatService) {}
@@ -33,5 +33,21 @@ export class ChatController {
       } catch (error) {
         next(error)
       }
+  }
+
+  getMessageByChatId = async(req:RequestWithUser,res:Response,next:NextFunction):Promise<void>=>{
+    try {
+      console.log('hey')
+      const chatId = req.params.chatId
+      const page = parseInt(req.query.page as string) || 0;
+      const limit = parseInt(req.query.limit as string) || 20;
+      if(!chatId){
+        throw new ApiError('chat id not found',400)
+      }
+      const message = await this.chatService.getMessagesByChatId(chatId,page,limit)
+      res.status(200).json({success:true,message:"Messages fetched successfully",data:message})
+    } catch (error) {
+      next(error)
+    }
   }
 }

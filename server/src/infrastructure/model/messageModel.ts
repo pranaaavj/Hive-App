@@ -10,6 +10,20 @@ export interface    IMessage extends Document {
     updatedAt?: Date;
   }
 
+  export interface IFormattedMessage {
+  messageId: string;
+  text: string;
+  isSeen: boolean;
+  createdAt: Date;
+}
+
+export interface PaginatedMessages{
+    messages: IFormattedMessage[],
+    page:number,
+    limit:number,
+    hasMore:boolean
+}
+
 const messageSchema = new Schema<IMessage> (
     {
         chatId: {
