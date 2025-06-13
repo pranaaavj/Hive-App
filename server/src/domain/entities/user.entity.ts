@@ -9,6 +9,7 @@ export interface IUser {
   isVerified: boolean;
   resetPasswordToken?: string;
   isDeleted: boolean;
+  isOnline: boolean,
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -24,7 +24,7 @@ export class ChatController {
   };
   myChats = async(req: RequestWithUser, res: Response, next: NextFunction) : Promise<void> => {
       try {
-        const userId = req?.query?.userId as string
+        const userId = req?.user?.userId
       if (!userId) throw new ApiError('not authorized user', 401);
         console.log(userId)
       const myChats = await this.chatService.myChats(userId)
@@ -50,4 +50,5 @@ export class ChatController {
       next(error)
     }
   }
+
 }

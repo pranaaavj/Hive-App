@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Send, Phone, Video, MoreVertical, Search, ArrowLeft } from "lucide-react"
-
+import { useGetChatsQuery } from "@/services/chatApi"
+import { ChatPreview } from "@/types/chat"
+import { useOnlineUsers } from "@/hooks/useOnlineUsers"
 // TypeScript interfaces
 interface User {
   id: string
@@ -197,10 +199,12 @@ const generateChats = (): Chat[] => {
 
 export default function MessagesPage() {
   const [chats] = useState<Chat[]>(generateChats())
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null)
+  const [selectedChat, setSelectedChat] = useState<ChatPreview |null>(null)
   const [newMessage, setNewMessage] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [showUserDetails, setShowUserDetails] = useState(false)
+  const {data: userChats, isLoading} = useGetChatsQuery(undefined)
+  const {onlineUsers} = useOnlineUsers()
 
   const filteredChats = chats.filter(
     (chat) =>
@@ -234,18 +238,18 @@ export default function MessagesPage() {
     })
   }
 
-  const formatLastSeen = (date: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const minutes = Math.floor(diff / (1000 * 60))
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  // const formatLastSeen = (date: Date) => {
+  //   const now = new Date()
+  //   const diff = now.getTime() - date.getTime()
+  //   const minutes = Math.floor(diff / (1000 * 60))
+  //   const hours = Math.floor(diff / (1000 * 60 * 60))
+  //   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
 
-    if (minutes < 1) return "Just now"
-    if (minutes < 60) return `${minutes}m ago`
-    if (hours < 24) return `${hours}h ago`
-    return `${days}d ago`
-  }
+  //   if (minutes < 1) return "Just now"
+  //   if (minutes < 60) return `${minutes}m ago`
+  //   if (hours < 24) return `${hours}h ago`
+  //   return `${days}d ago`
+  // }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -268,41 +272,43 @@ export default function MessagesPage() {
         {/* Chat List */}
         <ScrollArea className="flex-1">
           <div className="p-2">
-            {filteredChats.map((chat) => (
+            {userChats?.map((chat: ChatPreview) => (
               <div
-                key={chat.id}
+                key={chat._id}
                 onClick={() => {
                   setSelectedChat(chat)
                   setShowUserDetails(false)
                 }}
                 className={`flex items-center p-3 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors ${
-                  selectedChat?.id === chat.id ? "bg-blue-50 border border-blue-200" : ""
+                  selectedChat?._id === chat._id ? "bg-blue-50 border border-blue-200" : ""
                 }`}
               >
+            
                 <div className="relative">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={chat.user.avatar || "/placeholder.svg"} alt={chat.user.name} />
-                    <AvatarFallback>{chat.user.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={chat?.otherUser?.profilePic || "/placeholder.svg"} alt={chat.otherUser.username} />
+                    <AvatarFallback>{chat.otherUser.username.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  {chat.user.isOnline && (
+                  
+                  {onlineUsers.includes(chat.otherUser._id) && (
                     <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></div>
                   )}
                 </div>
                 <div className="p ml-3 flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-900 truncate">{chat.user.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-gray-900 truncate">{chat.otherUser.username}</p>
+                    {/* <p className="text-xs text-gray-500">
                       {chat.lastMessage && formatLastSeen(chat.lastMessage.timestamp)}
-                    </p>
+                    </p> */}
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500 truncate">{chat.lastMessage?.content || "No messages yet"}</p>
+                  {/* <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-500 truncate">{chat.lastMessage?.text || "No messages yet"}</p>
                     {chat.unreadCount > 0 && (
                       <Badge variant="default" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
                         {chat.unreadCount}
                       </Badge>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ))}

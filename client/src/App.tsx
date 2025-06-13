@@ -12,8 +12,10 @@ import {ProfileEditPage} from './pages/user/ProfielEditPage'
 import { setupPostSocketListeners } from './lib/socketListeners'
 import { useEffect } from 'react'
 import MessagesPage from './pages/user/MessagesPage'
+import { useSocketAuth } from './hooks/useSocketAuth'
 
 function App() {
+  useSocketAuth();
    useEffect(() => {
     setupPostSocketListeners(); // ✅ Setup global socket event handlers ONCE
   }, []);

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Heart, MessageCircle, Send, MoreHorizontal } from "lucide-react";
 import { Post } from "@/types/post";
-import { socket } from "@/lib/socket";
+// import { socket } from "@/lib/socket";
 import { useEffect, useState } from "react";
 import { useLikePostMutation,useUnlikePostMutation } from "@/services/postApi";
 import { useSelector } from "react-redux";

@@ -48,7 +48,8 @@ export class ChatService {
           otherUser: {
             _id: otherUser?._id,
             username: otherUser?.username,
-            profilePic: otherUser?.profilePicture
+            profilePic: otherUser?.profilePicture,
+            isOnline: otherUser?.isOnline,
           },
           lastMessage: lastMessage || null,
           updatedAt: chat.updatedAt!,

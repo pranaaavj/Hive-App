@@ -7,5 +7,6 @@ export function setUpChatRoutes(chatController:ChatController):Router{
     router.post('/send-message',authMiddleware,chatController.sendMessage)
     router.get("/chats",chatController.myChats)
     router.get('/:chatId',chatController.getMessageByChatId)
+
     return router
 }
