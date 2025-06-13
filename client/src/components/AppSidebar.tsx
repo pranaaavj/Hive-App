@@ -18,6 +18,7 @@ import { useAppSelector } from "@/hooks/reduxHooks"
 import { useLogoutUserMutation } from "@/services/authApi"
 import { useDispatch } from "react-redux"
 import { logout } from "@/redux/slices/userSlice"
+import { socket } from "@/lib/socket"
 
 interface AppSidebarProps {
   onCreateClick?: () => void
@@ -74,6 +75,7 @@ export function AppSidebar({ onCreateClick, minimalMode }: AppSidebarProps) {
     try {
       await logoutUser().unwrap()
       dispatch(logout())
+      socket.disconnect()
       navigate("/login")
     } catch (error) {
       console.error("Logout failed", error);

@@ -5,7 +5,7 @@ import { ChatController } from '../userControllers/chatController';
 export function setUpChatRoutes(chatController:ChatController):Router{
     const router = Router()
     router.post('/send-message',authMiddleware,chatController.sendMessage)
-    router.get("/chats",chatController.myChats )
+    router.get("/chats", authMiddleware,chatController.myChats )
     
     return router
 }

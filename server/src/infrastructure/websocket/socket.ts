@@ -1,18 +1,21 @@
 import { Server } from 'socket.io';
 import { CommentModel } from '../model/commentModel';
+import { UserModel } from '../model/user.model';
 
 let io: Server | null = null;
+
+const onlineUsers = new Map<string, string>()
 
 function setupChangeStream() {
   const changeStream = CommentModel.watch(
     [
       { 
-        $match: { 
+        $match: {
           $or: [
             { operationType: 'insert' },
             { 
               operationType: 'update',
-              'updateDescription.updatedFields.isDeleted': true // Detect soft deletes
+              'updateDescription.updatedFields.isDeleted': true
             },
             { operationType: 'delete' } 
           ]
@@ -28,7 +31,7 @@ function setupChangeStream() {
 
     if (!roomId) return;
 
-    // Handle new comments/replies (existing logic)
+    
     if (change.operationType === 'insert') {
       const comment = change.fullDocument;
       const populatedComment = await CommentModel.findById(comment._id)
@@ -86,6 +89,43 @@ export function setupWebSocket(httpServer: any): Server {
     socket.on('leavePost', (postId: string) => {
       socket.leave(postId);
       console.log(`📤 Socket ${socket.id} left room: ${postId}`);
+    });
+    //for use online status
+    socket.on('userConnected', async (userId: string) => {
+      console.log(`🟢 User Connected ID: ${userId}`);
+      onlineUsers.set(userId, socket.id);
+      await UserModel.findByIdAndUpdate(userId, { isOnline: true });
+    
+      const allOnline = Array.from(onlineUsers.keys());
+      console.log(`📡 Emitting onlineUsers to ${userId}`, allOnline);
+    
+      socket.emit('onlineUsers', allOnline);
+      console.log("all online user are", allOnline)
+      io?.emit('userOnline', userId);
+    });
+
+    socket.on('requestOnlineUsers', () => {
+      socket.emit('onlineUsers', Array.from(onlineUsers.keys()));
+    });
+
+
+    socket.on('disconnect', async () => {
+      const userId = [...onlineUsers.entries()].find(
+        ([, sid]) => sid === socket.id
+      )?.[0];
+
+      if (userId) {
+        onlineUsers.delete(userId);
+        await UserModel.findByIdAndUpdate(userId, {
+          isOnline: false,
+          lastActive: new Date(),
+        });
+
+        console.log(`🔴 User ${userId} is now offline`);
+        io?.emit('userOffline', userId); // Optional broadcast
+      }
+
+      console.log(`❎ Client disconnected: ${socket.id}`);
     });
 
     socket.on('disconnect', () => {
