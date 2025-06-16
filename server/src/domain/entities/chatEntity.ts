@@ -1,10 +1,10 @@
 import { IChat } from "../../infrastructure/model/ChatModel";
-import {IMessage } from "../../infrastructure/model/messageModel";
+import {IMessage, IPopulatedMessage } from "../../infrastructure/model/messageModel";
 import { IUser } from "./user.entity";
 
 export interface AddChat {
     chat: IChat,
-    message: IMessage
+    message: IPopulatedMessage
 }
 
 export interface Userchats {

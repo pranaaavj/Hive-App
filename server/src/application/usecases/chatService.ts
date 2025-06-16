@@ -5,7 +5,7 @@ import { ChatRepository } from '../repositories/chatRepository';
 import { MessageRepository } from '../repositories/messageRepository';
 import { IChat } from '../../infrastructure/model/ChatModel';
 import { UserRepository } from '../repositories/user.repository';
-import { PaginatedMessages } from '../../infrastructure/model/messageModel';
+import { IPopulatedMessage, MessageModel, PaginatedMessages } from '../../infrastructure/model/messageModel';
 
 export class ChatService {
   constructor(
@@ -27,9 +27,14 @@ export class ChatService {
         senderId,
         text,
       );
+
+      const populatedMessage = await MessageModel.findById(message._id)
+      .populate('sender','profilePicture')
+      .lean() as IPopulatedMessage
+
       return{
         chat,
-        message
+        message:populatedMessage,
       }
   }
 

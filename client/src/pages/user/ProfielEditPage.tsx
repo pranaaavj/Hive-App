@@ -18,7 +18,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ImageCropper } from "@/components/ImageCropper";
 import { updloadToCloudinary } from "@/utils/cloudinary";
-
+import { setProfilePicture } from "@/redux/slices/userSlice";
+import { useDispatch } from "react-redux";
 
 export function ProfileEditPage() {
   const {userId} = useParams()  
@@ -31,7 +32,7 @@ export function ProfileEditPage() {
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const dispatch = useDispatch()
   const {data: profile, isLoading} = useGetProfileDetailsQuery(userId)
   const [formData, setFormData] = useState({
     username: profile?.username || '',
@@ -124,7 +125,9 @@ export function ProfileEditPage() {
         profilePicture: profilePictureUrl,
       };
 
-    await upadateProfile(updatedData).unwrap()
+    let updatedProfile = await upadateProfile(updatedData).unwrap()
+    console.log(updatedProfile,'updatedProfile')
+    dispatch(setProfilePicture(updatedProfile.profile.profilePicture))
     setCroppedImage(null);
     if (profileImagePreview && profileImagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(profileImagePreview);

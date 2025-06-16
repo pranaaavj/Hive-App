@@ -10,6 +10,18 @@ export interface    IMessage extends Document {
     updatedAt?: Date;
   }
 
+  export interface IPopulatedMessage extends Omit<IMessage, 'sender'> {
+    _id: Types.ObjectId;
+    chatId: Types.ObjectId;
+    sender: {
+        _id: Types.ObjectId;
+        profilePicture?: string;
+    };
+    text: string;
+    isSeen: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
   export interface IFormattedMessage {
   messageId: string;
   senderId: Types.ObjectId,

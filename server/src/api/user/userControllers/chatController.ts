@@ -21,9 +21,10 @@ export class ChatController {
       const {chat, message} = result
       
       const io = getIO();
-    io.to(chat._id.toString()).emit('receiveMessage', {
+      io.to(chat._id.toString()).emit('receiveMessage', {
       chatId: message.chatId.toString(),
       senderId: message.sender.toString(),
+      profilePic:message.sender.profilePicture,
       text: message.text,
       createdAt: message.createdAt,
     });

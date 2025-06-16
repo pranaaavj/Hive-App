@@ -70,6 +70,7 @@ interface Chat {
 interface SocketMessage {
   chatId: string;
   senderId: string;
+  profilePic?:string;
   text: string;
   createdAt: string;
 }
@@ -79,6 +80,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserDetails, setShowUserDetails] = useState(false);
+  const currentUser = useSelector((state:RootState)=>state.user.user)
   // ADDED: State to store real-time messages
   const [realtimeMessages, setRealtimeMessages] = useState<ApiMessage[]>([]);
   
@@ -135,7 +137,7 @@ export default function MessagesPage() {
           text: data.text,
           isSeen: false,
           createdAt: data.createdAt,
-          profilePic: selectedChat.otherUser.profilePic || "/placeholder.svg",
+          profilePic: data.profilePic || "/placeholder.svg",
           senderId: data.senderId,
         };
         
@@ -166,12 +168,13 @@ export default function MessagesPage() {
   const handleSendMessage = async () => {
     if (newMessage.trim() && selectedChat) {
       // ADDED: Immediately add the sent message to real-time messages for instant display
+      
       const tempMessage: ApiMessage = {
         messageId: `temp-sent-${Date.now()}`,
         text: newMessage,
         isSeen: false,
         createdAt: new Date().toISOString(),
-        profilePic: selectedChat.otherUser.profilePic || "/placeholder.svg", // You might want to use current user's profile pic here
+        profilePic: currentUser?.profilePicture || "/placeholder.svg", // You might want to use current user's profile pic here
         senderId: currentUserId,
       };
       

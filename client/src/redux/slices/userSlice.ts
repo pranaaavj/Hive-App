@@ -7,7 +7,6 @@ interface UserState {
 
 const initialState: UserState = {
     user: null,
-   
 }
 
 const userSlice = createSlice({
@@ -22,8 +21,12 @@ const userSlice = createSlice({
               state.user = null;
                 localStorage.removeItem('accessToken')
             },
-          
+        setProfilePicture: (state, action: PayloadAction<string>) => {
+            if (state.user) {
+            state.user.profilePicture = action.payload;
+            }
+        }
     },
 })
-export const {setUser, logout} = userSlice.actions;
+export const {setUser, logout,setProfilePicture} = userSlice.actions;
 export default userSlice.reducer
