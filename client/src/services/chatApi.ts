@@ -10,8 +10,21 @@ export const chatApi = createApi({
                 url: `/messages/chats`,
                 method: "GET"
             })  
+        }),
+    getMessages: builder.query({
+        query: (chatId) => ({
+            url: `/messages/${chatId}`,
+            method: "GET"
         })
+    }),
+    sendMessage: builder.mutation({
+        query:({senderId,receiverId,text})=>({
+            url:`/messages/send-message`,
+            method:'POST',
+            body:{senderId,receiverId,text}
+        })
+    })
     })
 })
 
-export const {useGetChatsQuery} = chatApi;
+export const {useGetChatsQuery, useLazyGetMessagesQuery,useSendMessageMutation} = chatApi;

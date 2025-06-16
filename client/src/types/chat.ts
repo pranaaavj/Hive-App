@@ -3,7 +3,9 @@ export interface ChatPreview {
     otherUser: {
         _id:string,
         username:string,
-        profilePic: string
+        profilePic: string,
+        isOnline: boolean
+
     },
     lastMessage: {
         _id: string;

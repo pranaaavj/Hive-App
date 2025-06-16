@@ -32,12 +32,18 @@ export class MongoMessageRepository implements MessageRepository {
     const skip = page * limit;
 
     const rawMessages  = await MessageModel.find({ chatId })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .skip(skip)
       .limit(limit)
+      .populate("sender", "_id profilePicture")
+
+      console.log('profile pic',rawMessages)
 
       const messages:IFormattedMessage[] = rawMessages.map((msg)=>({
         messageId:msg._id.toString(),
+        senderId: msg.sender._id,
+        profilePic:  (msg.sender as any).profilePicture,
+ 
         text:msg.text,
         isSeen:msg.isSeen,
         createdAt: msg.createdAt!, 

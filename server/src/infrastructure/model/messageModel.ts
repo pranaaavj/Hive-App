@@ -12,8 +12,10 @@ export interface    IMessage extends Document {
 
   export interface IFormattedMessage {
   messageId: string;
+  senderId: Types.ObjectId,
   text: string;
   isSeen: boolean;
+  profilePic?: {profilePicture: string},
   createdAt: Date;
 }
 

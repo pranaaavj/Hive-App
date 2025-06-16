@@ -90,6 +90,16 @@ export function setupWebSocket(httpServer: any): Server {
       socket.leave(postId);
       console.log(`📤 Socket ${socket.id} left room: ${postId}`);
     });
+
+    //chat socket 
+    socket.on("joinChat", (chatId: string) => {
+      socket.join(chatId)
+
+    })
+    socket.on("leaveChat", (chatId: string) => {
+      socket.leave(chatId)
+    })
+
     //for use online status
     socket.on('userConnected', async (userId: string) => {
       console.log(`🟢 User Connected ID: ${userId}`);
