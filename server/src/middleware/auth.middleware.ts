@@ -9,6 +9,10 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
   try {
 
     const authHeader = req.headers.authorization;
+<<<<<<< HEAD
+=======
+    // console.log('Authorization header:', authHeader);
+>>>>>>> develop
 
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
@@ -17,11 +21,19 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
     const redis = new RedisClient();
     const isBlacklisted = await redis.get(`blacklist:${token}`);
+<<<<<<< HEAD
+=======
+    // console.log('Is token blacklisted:', isBlacklisted);
+>>>>>>> develop
     if (isBlacklisted) {
       throw new ApiError('Token is invalid', 401);
     }
 
     const payload = verifyAccessToken(token);
+<<<<<<< HEAD
+=======
+    // console.log('Payload:', payload);
+>>>>>>> develop
     if (!payload) {
       throw new ApiError('Invalid token', 401);
     }

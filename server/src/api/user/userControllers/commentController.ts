@@ -1,10 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CommentService } from '../../../application/usecases/comment.service';
 import { ApiError } from '../../../utils/apiError';
-
-interface RequestWithUser extends Request {
-  user?: { userId: string; email: string };
-}
+import { RequestWithUser } from '../../../types/RequestWithUser';
 
 export class CommentController {
   constructor(private commentService: CommentService) {}
@@ -65,9 +62,11 @@ export class CommentController {
 
   deleteComment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
+
       const userReq = req as RequestWithUser;
       const userId = userReq.user?.userId;
       const { commentId } = req.params;
+
 
       if (!userId) {
         throw new ApiError('User not authenticated', 401);
@@ -77,8 +76,12 @@ export class CommentController {
 
       res.status(200).json({
         success: true,
-        message: 'Comment deleted successfully',
-        data: deletedComment,
+        message: deletedComment.message,
+        data: {
+          commentId,
+          deletionType: deletedComment.deletionType,
+          comment: deletedComment.comment
+        }
       });
     } catch (error) {
       next(error);

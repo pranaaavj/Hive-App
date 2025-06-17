@@ -1,46 +1,58 @@
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
-import { Calendar, Camera, Check, Heart, LinkIcon, MapPin, MessageCircle, Share2, UserPlus, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { useAppSelector } from "@/hooks/reduxHooks"
-import { useGetUserPostsQuery } from "@/services/authApi"
-import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
-import { ImageCropper } from "@/components/ImageCropper"
-import { updloadToCloudinary } from "@/utils/cloudinary"
-import { useAddProfilePictureMutation, useGetProfileDetailsQuery } from "@/services/authApi"
+import { useState, useEffect, use } from "react";
+import {
+  Calendar,
+  Edit,
+  Heart,
+  LinkIcon,
+  MapPin,
+  MessageCircle,
+  Share2,
+  UserPlus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useNavigate, useParams } from "react-router-dom";
+import { Separator } from "@/components/ui/separator";
+import { useAppSelector } from "@/hooks/reduxHooks";
+import {
+  useGetUserPostsQuery,
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+} from "@/services/authApi";
 
+import { useGetProfileDetailsQuery } from "@/services/authApi";
+import { FollowingFollowersModal } from "@/components/modals/FollowingFollowersModal";
+import { useMyStoriesQuery, useMarkStorySeenMutation } from "@/services/postApi";
+import { StoriesModal } from "@/components/modals/StoriesModal";
 
 // Types for our data models
 interface User {
-  id: string
-  name: string
-  username: string
-  bio: string
-  location: string
-  website: string
-  joinDate: string
-  following: number
-  followers: number
-  posts: number
-  profileImage: string
-  coverImage: string
-  isVerified: boolean
+  id: string;
+  name: string;
+  username: string;
+  bio: string;
+  location: string;
+  website: string;
+  joinDate: string;
+  following: number;
+  followers: number;
+  posts: number;
+  profileImage: string;
+  coverImage: string;
+  isVerified: boolean;
 }
 
 export type Post = {
-  _id: string
-  userId: string
-  caption: string
-  imageUrls: string[]
-  likes: string[]
-  likeCount: number
-  commentCount: number
-}
+  _id: string;
+  userId: string;
+  caption: string;
+  imageUrls: string[];
+  likes: string[];
+  likeCount: number;
+  commentCount: number;
+};
 
 // Mock data for demonstration
 const userData: User = {
@@ -57,7 +69,7 @@ const userData: User = {
   profileImage: "/placeholder.svg?height=200&width=200",
   coverImage: "/placeholder.svg?height=400&width=1200",
   isVerified: true,
-}
+};
 
 const postsData = [
   {
@@ -94,7 +106,8 @@ const postsData = [
   },
   {
     id: "3",
-    content: "Throwback to last summer in Barcelona. Missing those sunny days and amazing architecture!",
+    content:
+      "Throwback to last summer in Barcelona. Missing those sunny days and amazing architecture!",
     image: "/placeholder.svg?height=500&width=500",
     likes: 512,
     comments: 63,
@@ -107,190 +120,282 @@ const postsData = [
       profileImage: "/placeholder.svg?height=200&width=200",
     },
   },
-]
+];
 
 export function ProfilePage() {
-  const username = useAppSelector((state) => state.user.user?.username)
-  const { data, isLoading } = useGetUserPostsQuery(undefined)
-  const {data: profile, isComing} = useGetProfileDetailsQuery(undefined)
-  const [isFollowing, setIsFollowing] = useState(false)
-  const [activeTab, setActiveTab] = useState("posts")
-  const [posts, setPosts] = useState([])
+  const user = useAppSelector((state) => state.user.user?.id);
+  const { userId } = useParams();
+  const { data, isLoading } = useGetUserPostsQuery(userId);
+  const { data: myStories, refetch: refetchStories } = useMyStoriesQuery(undefined);
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useGetProfileDetailsQuery(userId);
+  const [activeTab, setActiveTab] = useState("posts");
+  const [posts, setPosts] = useState([]);
+  const navigate = useNavigate();
 
-  const [profileImage, setProfileImage] = useState("")
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [croppedImage, setCroppedImage] = useState<File | null>(null)
-  const [addProfilePicture] = useAddProfilePictureMutation()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [followUser, { isLoading: isFollowLoading }] = useFollowUserMutation();
+  const [unfollowUser, { isLoading: isUnfollowLoading }] =
+    useUnfollowUserMutation();
+
+  const [isFollowingState, setIsFollowingState] = useState(false);
+  const [isFollowedState, setIsFollowedState] = useState(false);
+
+  const [profileImage, setProfileImage] = useState("");
+  const isOwnProfile = user == userId;
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"followers" | "following">(
+    "followers"
+  );
+
+  const [openStoriesModal, setOpenStoriesModal] = useState(false)
+   const [markStorySeen] = useMarkStorySeenMutation();
+
+
+  const openFollowersModal = () => {
+    setModalType("followers");
+    setModalOpen(true);
+  };
+  const openFollowingModal = () => {
+    setModalType("following");
+    setModalOpen(true);
+  };
 
   useEffect(() => {
-    if (data?.posts) {
-      setPosts(data.posts)
+    if (userId) {
+      setProfileImage("");
     }
-  }, [data])
 
-  useEffect(() => {
+    if (data?.posts) {
+      setPosts(data.posts);
+    }
+
     if (profile?.profilePicture) {
       setProfileImage(profile.profilePicture);
     }
-  }, [profile]);
 
-  const toggleFollow = () => {
-    setIsFollowing(!isFollowing)
-  }
+    if (profile) {
+      setIsFollowingState(profile.isFollowing || false);
+      setIsFollowedState(profile.isFollowed || false);
+    }
+  }, [userId, data, profile]);
 
-  
-  const handleProfileImageClick = () => {
-    fileInputRef.current?.click()
-  }
+  const getFollowStatus = () => {
+    if (isFollowingState) return "Following";
+    if (!isFollowingState && isFollowedState) return "Follow back";
+    return "Follow";
+  };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0]
-      const reader = new FileReader()
+  const toggleFollow = async () => {
+    if (!userId || user === userId) return;
 
-      reader.onload = () => {
-        setSelectedImage(reader.result as string)
-        setIsUploadModalOpen(true)
+    try {
+      if (isFollowingState) {
+        setIsFollowingState(false);
+
+        await unfollowUser(userId).unwrap();
+      } else {
+        setIsFollowingState(true);
+
+        await followUser(userId).unwrap();
       }
 
-      reader.readAsDataURL(file)
+      refetchProfile();
+    } catch (error) {
+      setIsFollowingState(!isFollowingState);
+      console.error("Failed to update follow status:", error);
+    }
+  };
+
+  const formatJoinDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `Joined ${date.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    })}`;
+  };
+
+  const handleOpenStories = () => {
+    if(myStories && myStories?.stories.length > 0) {
+      setOpenStoriesModal(true)
     }
   }
 
-  const handleCropComplete = (file: File) => {
-    setCroppedImage(file)
+  const handleCloseStories = async() => {
+    setOpenStoriesModal(false);
+    await refetchStories()
+  };
+
+  if (isLoading || isProfileLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        Loading...
+      </div>
+    );
   }
 
-  const handleSaveImage = async () => {
-    if (!croppedImage) return
-
-    const url = await updloadToCloudinary(croppedImage)
-    if (url) {
-      setProfileImage(url) 
+  const handleMarkStorySeen = async (storyId: string) => {
+    try {
+      await markStorySeen({ storyId }).unwrap();
+    } catch (error) {
+      console.error("Failed to mark story as seen:", error);
     }
-    await addProfilePicture({imageUrl: url}).unwrap()
+  };
 
-    setIsUploadModalOpen(false)
-    setSelectedImage(null)
-    setCroppedImage(null)
-  }
-
-  const handleCancelUpload = () => {
-    setIsUploadModalOpen(false)
-    setSelectedImage(null)
-    setCroppedImage(null)
-  }
-  if (isLoading || isComing) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>
-  }
 
   return (
-    <div className="max-w-5xl mx-auto bg-gradient-to-b from-amber-50 to-white p-4 sm:p-6 md:p-8 space-y-6 rounded-lg shadow-sm">
+    <div className="max-w-5xl mx-auto bg-gradient-to-b from-amber-50 to-white p-4 sm:pshadow-sm-6 md:p-8 space-y-6 rounded-lg ">
       {/* Profile Header */}
-      <div className="relative px-4 sm:px-6 lg:px-8 py-6 bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg shadow-md">
-        <div className="flex flex-col sm:flex-row gap-6">
-          {/* Profile Image with Upload Functionality */}
-          <div className="flex-shrink-0 relative group">
+      <div className="relative px-6 py-6 bg-gradient-to-r from-amber-100 to-orange-200 rounded-lg shadow-md">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left Column: Profile Image */}
+          <div className="flex-shrink-0 relative group self-start">
             <div
-              className="relative cursor-pointer rounded-full overflow-hidden h-32 w-32 ring-4 ring-white shadow-lg"
-              onClick={handleProfileImageClick}
+            
+              className={`rounded-full overflow-hidden p-[3px] h-32 w-32  ${
+                myStories?.stories?.length > 0
+                  ? myStories?.stories?.every((story) => story.isSeen)
+                    ? "bg-gray-400 cursor-pointer"
+                    : "cursor-pointer bg-gradient-to-br from-amber-300 to-amber-500"
+                  : ""
+              }`}
+              onClick={() => handleOpenStories()}
             >
-              <Avatar className="h-32 w-32">
-              <AvatarImage src={profileImage || "/placeholder.svg"} alt="profile" />
-                <AvatarFallback>{(profile?.username ?? "U").charAt(0)}</AvatarFallback>
+              <Avatar className="w-full h-full border-2 border-white">
+                <AvatarImage
+                  src={profileImage || "/placeholder.svg"}
+                  alt={profile?.username}
+                />
+                <AvatarFallback>{profile?.username.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <Camera className="h-8 w-8 text-white" />
-              </div>
             </div>
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
           </div>
 
+          {/* Middle Column: User Info and Stats */}
           <div className="flex-1">
-            {/* User Info */}
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">{profile?.username}</h1>
-                {userData.isVerified && (
-                  <Badge variant="secondary" className="rounded-full bg-violet-100 text-violet-700">
-                    Verified
-                  </Badge>
-                )}
-              </div>
-              <p className="text-muted-foreground">@{userData.username}</p>
-              <p className="mt-3 text-gray-700">{userData.bio}</p>
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex-1">
+                {/* User Info */}
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold">{profile?.username}</h1>
+                </div>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm">
-                {userData.location && (
-                  <div className="flex items-center text-muted-foreground">
-                    <MapPin className="h-4 w-4 mr-1 text-violet-500" />
-                    {userData.location}
+                {/* Stats - positioned to the right of username on desktop */}
+                <div className="flex gap-8 mt-3">
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="font-semibold">{posts.length}</span>
+                    <span className="hover:cursor-pointer hover:underline font-semiboldv text-sm">
+                      Posts
+                    </span>
                   </div>
-                )}
-                {userData.website && (
-                  <div className="flex items-center text-violet-500">
-                    <LinkIcon className="h-4 w-4 mr-1" />
-                    <a
-                      href={`https://${userData.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="font-semibold">
+                      {profile?.followersCount}
+                    </span>
+                    <span
+                      onClick={openFollowersModal}
+                      className="hover:cursor-pointer hover:underline font-semiboldv text-sm"
                     >
-                      {userData.website}
-                    </a>
+                      Followers
+                    </span>
                   </div>
-                )}
-                <div className="flex items-center text-muted-foreground">
+                  <div className="flex flex-col items-center md:items-start">
+                    <span className="font-semibold">
+                      {profile?.followingCount}
+                    </span>
+                    <span
+                      onClick={openFollowingModal}
+                      className="hover:cursor-pointer hover:underline font-semiboldv text-sm"
+                    >
+                      Following
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bio with fixed height */}
+                <div className="mt-4 min-h-[60px]">
+                  <p className="text-gray-700">
+                    {profile?.bio || "No bio available"}
+                  </p>
+                </div>
+
+                {/* Join Date */}
+                <div className="flex items-center text-muted-foreground text-sm mt-2">
                   <Calendar className="h-4 w-4 mr-1 text-violet-500" />
-                  Joined {userData.joinDate}
+                  {formatJoinDate(profile?.createdAt)}
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="flex gap-6 mt-4">
-                <div className="flex flex-col items-center sm:items-start">
-                  <span className="font-semibold">{posts?.length}</span>
-                  <span className="text-muted-foreground text-sm">Posts</span>
-                </div>
-                <div className="flex flex-col items-center sm:items-start">
-                  <span className="font-semibold">{profile?.followersCount}</span>
-                  <span className="text-muted-foreground text-sm">Followers</span>
-                </div>
-                <div className="flex flex-col items-center sm:items-start">
-                  <span className="font-semibold">{profile?.followingCount}</span>
-                  <span className="text-muted-foreground text-sm">Following</span>
-                </div>
+              {/* Right Column: Actions */}
+              <div className="flex flex-row  md:flex-col w-32 gap-2 mt-2 md:mt-0 md:self-start">
+                {isOwnProfile ? (
+                  <Button
+                    onClick={() => {
+                      navigate(`/profile/edit/${userId}`);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="shadow-sm"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-violet-600 hover:bg-violet-700 shadow-sm"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Message
+                    </Button>
+                    <Button
+                      variant={
+                        getFollowStatus() === "Following"
+                          ? "outline"
+                          : "default"
+                      }
+                      size="sm"
+                      onClick={toggleFollow}
+                      className={
+                        getFollowStatus() === "Following"
+                          ? "shadow-sm"
+                          : "bg-violet-600 hover:bg-violet-700 shadow-sm"
+                      }
+                      disabled={isFollowLoading || isUnfollowLoading}
+                    >
+                      {isFollowLoading || isUnfollowLoading ? (
+                        "Loading..."
+                      ) : (
+                        <>
+                          {getFollowStatus() === "Follow" && (
+                            <>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Follow
+                            </>
+                          )}
+                          {getFollowStatus() === "Follow back" && (
+                            <>
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Follow back
+                            </>
+                          )}
+                          {getFollowStatus() === "Following" && "Following"}
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
+                <Button variant="outline" size="sm" className="shadow-sm">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex sm:flex-col gap-2 mt-4 sm:mt-0">
-            <Button variant="default" size="sm" className="bg-violet-600 hover:bg-violet-700 shadow-sm">
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Message
-            </Button>
-            <Button
-              variant={isFollowing ? "outline" : "default"}
-              size="sm"
-              onClick={toggleFollow}
-              className={isFollowing ? "shadow-sm" : "bg-violet-600 hover:bg-violet-700 shadow-sm"}
-            >
-              {isFollowing ? (
-                "Following"
-              ) : (
-                <>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Follow
-                </>
-              )}
-            </Button>
-            <Button variant="outline" size="sm" className="shadow-sm">
-              <Share2 className="h-4 w-4 mr-2" />
-              Share
-            </Button>
           </div>
         </div>
       </div>
@@ -300,31 +405,43 @@ export function ProfilePage() {
       {/* Content Tabs */}
       <Tabs defaultValue="posts" className="px-4 sm:px-6 lg:px-8">
         <TabsList className="grid grid-cols-4 w-full max-w-md mx-auto bg-violet-50 rounded-lg overflow-hidden">
-          <TabsTrigger value="posts" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="posts"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             Posts
           </TabsTrigger>
-          <TabsTrigger value="media" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="media"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             Media
           </TabsTrigger>
-          <TabsTrigger value="likes" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="likes"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             Likes
           </TabsTrigger>
-          <TabsTrigger value="about" className="data-[state=active]:bg-violet-600 data-[state=active]:text-white">
+          <TabsTrigger
+            value="about"
+            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
+          >
             About
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="posts" className="mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1">
             {posts?.length > 0 ? (
               posts.map((post: Post) => (
-                <Card
+                <div
                   key={post?._id}
                   className="overflow-hidden group hover:shadow-md transition-all duration-300 border border-gray-200"
                 >
-                  <CardContent className="p-0">
+                  <div className="p-0">
                     {post?.imageUrls && post.imageUrls.length > 0 && (
-                      <div className="relative aspect-square w-full">
+                      <div className="relative aspect-[4/5] overflow-hidden w-full">
                         <img
                           src={post.imageUrls[0] || "/placeholder.svg"}
                           alt="Post image"
@@ -344,11 +461,9 @@ export function ProfilePage() {
                         </div>
                       </div>
                     )}
-                    <div className="p-3">
-                      <p className="text-sm line-clamp-2">{post.caption}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                    
+                  </div>
+                </div>
               ))
             ) : (
               <div className="col-span-full py-12 text-center text-muted-foreground">
@@ -363,7 +478,10 @@ export function ProfilePage() {
             {postsData
               .filter((post) => post.image)
               .map((post) => (
-                <div key={post.id} className="relative aspect-square overflow-hidden rounded-md group">
+                <div
+                  key={post.id}
+                  className="relative aspect-square overflow-hidden rounded-md group"
+                >
                   <img
                     src={post.image || ""}
                     alt="Media"
@@ -388,7 +506,10 @@ export function ProfilePage() {
 
         <TabsContent value="likes">
           <div className="py-12 text-center text-muted-foreground">
-            <p>Posts liked by {username || userData.name} will appear here</p>
+            <p>
+              Posts liked by {profile?.username || userData.name} will appear
+              here
+            </p>
           </div>
         </TabsContent>
 
@@ -396,7 +517,9 @@ export function ProfilePage() {
           <div className="py-6 space-y-6 max-w-2xl mx-auto">
             <Card className="shadow-sm">
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg text-violet-700 mb-2">Bio</h3>
+                <h3 className="font-semibold text-lg text-violet-700 mb-2">
+                  Bio
+                </h3>
                 <p>{userData.bio}</p>
               </CardContent>
             </Card>
@@ -404,7 +527,9 @@ export function ProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="shadow-sm">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-violet-700 mb-2">Location</h3>
+                  <h3 className="font-semibold text-lg text-violet-700 mb-2">
+                    Location
+                  </h3>
                   <div className="flex items-center">
                     <MapPin className="h-5 w-5 mr-2 text-violet-500" />
                     <p>{userData.location}</p>
@@ -414,7 +539,9 @@ export function ProfilePage() {
 
               <Card className="shadow-sm">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-violet-700 mb-2">Website</h3>
+                  <h3 className="font-semibold text-lg text-violet-700 mb-2">
+                    Website
+                  </h3>
                   <a
                     href={`https://${userData.website}`}
                     target="_blank"
@@ -429,7 +556,9 @@ export function ProfilePage() {
 
               <Card className="shadow-sm">
                 <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-violet-700 mb-2">Joined</h3>
+                  <h3 className="font-semibold text-lg text-violet-700 mb-2">
+                    Joined
+                  </h3>
                   <div className="flex items-center">
                     <Calendar className="h-5 w-5 mr-2 text-violet-500" />
                     <p>{userData.joinDate}</p>
@@ -440,30 +569,24 @@ export function ProfilePage() {
           </div>
         </TabsContent>
       </Tabs>
+      {userId && modalOpen && (
+        <FollowingFollowersModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          type={modalType}
+          userId={userId}
+        />
+      )}
+      { openStoriesModal && 
+      <StoriesModal
+        isOpen={openStoriesModal}
+        onClose={handleCloseStories}
+        userStoriesData={[myStories]}
+        initialUserIndex={0}
+        initialStoryIndex={0}
+        onMarkStorySeen={handleMarkStorySeen} 
+        />}
 
-      {/* Image Upload Modal */}
-      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Profile Picture</DialogTitle>
-          </DialogHeader>
-          {selectedImage && (
-            <div className="flex flex-col items-center space-y-4">
-              <ImageCropper image={selectedImage} onCropComplete={handleCropComplete} />
-            </div>
-          )}
-          <DialogFooter className="flex justify-between sm:justify-end gap-2">
-            <Button variant="outline" onClick={handleCancelUpload}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button onClick={handleSaveImage} disabled={!croppedImage} className="bg-violet-600 hover:bg-violet-700">
-              <Check className="h-4 w-4 mr-2" />
-              Upload
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
-  )
+  );
 }

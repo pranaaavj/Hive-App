@@ -6,12 +6,15 @@ export interface ICommentModel extends Document {
   userId: Types.ObjectId;
   content: string;
   parentCommentId?: Types.ObjectId;
-  likeCount: number;
   depth: number;
   isDeleted: boolean;
+
   createdAt: Date;
   updatedAt: Date;
+  deletedAt?:Date|null
+  deletedBy?:Types.ObjectId|null
 }
+
 
 const commentSchema = new Schema<ICommentModel>(
   {
@@ -19,9 +22,10 @@ const commentSchema = new Schema<ICommentModel>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true, trim: true },
     parentCommentId: { type: Schema.Types.ObjectId, ref: 'Comment' },
-    likeCount: { type: Number, default: 0 },
     depth: { type: Number, default: 0 },
     isDeleted: { type: Boolean, default: false },
+    deletedAt:{type:Date,default:null},
+    deletedBy:{type:Schema.Types.ObjectId,ref:'User',default:null}
   },
   { timestamps: true }
 );

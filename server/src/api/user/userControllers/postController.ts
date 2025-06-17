@@ -30,7 +30,7 @@ import { RequestWithUser } from '../../../types/RequestWithUser';
   
     getAllPosts = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
       try {
-        const userId = req.user?.userId
+        const userId = req.query?.userId
         
         const posts = await this.postService.getAllPosts(userId as string);
         res.status(200).json({

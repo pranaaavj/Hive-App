@@ -4,7 +4,7 @@ import { PostRepository } from '../repositories/postRepository';
 import { ApiError } from '../../utils/apiError';
 import { ICommentModel } from '../../infrastructure/model/commentModel';
 import { IPostModel } from '../../infrastructure/model/postModel';
-
+import { getIO } from '../../infrastructure/websocket/socket';
 
 export class CommentService {
   constructor(private commentRepository: CommentRepository, private postRepository: PostRepository) {}
@@ -15,7 +15,7 @@ export class CommentService {
       if (!post || post.isDeleted) {
         throw new ApiError('Post not found', 404);
       }
-
+      let depth = 0
       if (parentCommentId) {
         const parentComment = await this.commentRepository.findById(parentCommentId);
         if (!parentComment || parentComment.isDeleted) {
@@ -24,6 +24,7 @@ export class CommentService {
         if (parentComment.depth >= 3) {
           throw new ApiError('Maximum reply depth reached', 400);
         }
+        depth = parentComment.depth+1
       }
 
       const commentData: IComment = {
@@ -31,8 +32,7 @@ export class CommentService {
         userId,
         content,
         parentCommentId,
-        likeCount:0,
-        depth: parentCommentId ? (await this.commentRepository.findById(parentCommentId))?.depth! + 1 : 0,
+        depth,
         isDeleted: false,
       };
 
@@ -73,26 +73,56 @@ export class CommentService {
     }
   }
 
-  async deleteComment(commentId: string, userId: string): Promise<ICommentModel> {
-    try {
-      const comment = await this.commentRepository.findById(commentId);
-      if (!comment || comment.isDeleted) {
-        throw new ApiError('Comment not found', 404);
-      }
-      if (comment.userId.toString() !== userId) {
-        throw new ApiError('You are not authorized to delete this comment', 403);
-      }
-
-      const deletedComment = await this.commentRepository.delete(commentId);
-      if (!deletedComment) {
-        throw new ApiError('Error deleting comment', 500);
-      }
-
-      await this.postRepository.updateCommentCount(comment.postId.toString(), -1);
-      return deletedComment;
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      throw new ApiError('Error deleting comment', 500);
+  async deleteComment(
+  commentId: string,
+  userId: string
+): Promise<{ success: boolean; comment: ICommentModel; deletionType: 'soft' | 'hard'; message: string }> {
+  try {
+    const comment = await this.commentRepository.findById(commentId);
+    if (!comment || comment.isDeleted) {
+      throw new ApiError('Comment not found', 404);
     }
+
+    if (comment.userId._id.toString() !== userId) {
+      throw new ApiError('You are not authorized to delete this comment', 403);
+    }
+
+    const hasReplies = await this.commentRepository.hasReplies(commentId);
+    let result: { success: boolean; comment: ICommentModel; deletionType: 'soft' | 'hard'; message: string };
+
+    if (hasReplies) {
+      const softDeletedComment = await this.commentRepository.softDelete(commentId, userId);
+      if (!softDeletedComment) throw new ApiError('Failed to soft delete comment', 500);
+
+      result = {
+        success: true,
+        comment: softDeletedComment,
+        deletionType: 'soft',
+        message: 'Comment marked as deleted but preserved for replies',
+      };
+      getIO().to(comment.postId.toString()).emit('commentSoftDeleted', {
+        commentId,
+        updatedContent: '[Comment deleted]',
+        deletedBy: userId,
+      });
+    } else {
+      const hardDeletedComment = await this.commentRepository.hardDelete(commentId);
+      if (!hardDeletedComment) throw new ApiError('Failed to hard delete comment', 500);
+
+      result = {
+        success: true,
+        comment: hardDeletedComment,
+        deletionType: 'hard',
+        message: 'Comment permanently deleted',
+      };
+      getIO().to(comment.postId.toString()).emit('commentHardDeleted', { commentId,postId: comment.postId.toString() });
+      await this.postRepository.updateCommentCount(comment.postId.toString(), -1);
+    }
+
+    return result;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError('Error deleting comment', 500);
   }
+}
 }

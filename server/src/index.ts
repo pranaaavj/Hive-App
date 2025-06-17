@@ -15,7 +15,7 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
-const io = setupWebSocket(httpServer);
+setupWebSocket(httpServer);
 app.use(morgan('dev')); 
 app.use(cors({ 
   origin: ['http://localhost:5173', 'http://frontend:5173'], 

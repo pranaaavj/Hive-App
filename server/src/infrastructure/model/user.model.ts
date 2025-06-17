@@ -13,6 +13,8 @@ export interface IUserModel extends Document {
   postsCount: number;
   followers: Types.ObjectId[];
   following: Types.ObjectId[];
+  isOnline: boolean,
+  lastActive?: Date
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -32,7 +34,9 @@ const userSchema = new Schema<IUserModel>(
     bio: {type: String, default: ""},
     postsCount: {type: Number, default: 0},
     followers: [{type: Schema.Types.ObjectId, ref: "User", default: []}],
-    following: [{type: Schema.Types.ObjectId, ref: "User", default: []}]
+    following: [{type: Schema.Types.ObjectId, ref: "User", default: []}],
+    isOnline: {type: Boolean, default: false},
+    lastActive:{type: Date}
   },
   { timestamps: true }
 );

@@ -1,3 +1,6 @@
+
+version: '3.8'
+
 services:
   frontend:
     build:
@@ -32,8 +35,10 @@ services:
     networks:
       - hive-network
     depends_on:
-      - redis
-      - mongo
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_started
     restart: on-failure
 
   mongo:
@@ -41,7 +46,7 @@ services:
     container_name: hive-app-mongo
     ports:
       - "27017:27017"
-    command: --replSet rs0 --bind_ip_all
+    command: mongod --replSet rs0 --bind_ip_all
     volumes:
       - mongo-data:/data/db
     networks:
@@ -56,6 +61,7 @@ services:
   mongo-init:
     image: mongo:6.0
     container_name: hive-app-mongo-init
+    restart: "no"
     depends_on:
       mongo:
         condition: service_healthy
@@ -70,12 +76,18 @@ services:
       - hive-network
 
   redis:
-    image: redis:7-alpine
+
+    image: redis:latest,
     container_name: hive-app-redis
     ports:
       - "6379:6379"
     networks:
       - hive-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   hive-network:
@@ -83,3 +95,4 @@ networks:
 
 volumes:
   mongo-data:
+    driver: local

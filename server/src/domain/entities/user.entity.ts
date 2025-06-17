@@ -9,6 +9,7 @@ export interface IUser {
   isVerified: boolean;
   resetPasswordToken?: string;
   isDeleted: boolean;
+  isOnline: boolean,
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,7 +33,7 @@ export interface ProfileSummary {
 
 export class User {
   constructor(
-    public id: string,
+    public _id: string,
     public username: string,
     public email: string,
     public password: string,

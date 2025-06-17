@@ -9,6 +9,9 @@ export interface CommentRepository {
     findReplies(parentCommentId: string, page: number, limit: number): Promise<ICommentModel[]>;
     findById(id: string): Promise<ICommentModel | null>;
     delete(id: string): Promise<ICommentModel | null>;
+    hasReplies(commentId:string):Promise<boolean>;
+    softDelete(id:string,deletedBy:string):Promise<ICommentModel|null>
+    hardDelete(id:string):Promise<ICommentModel|null>
 }
 
 export class MongoCommentRepository implements CommentRepository {
@@ -24,7 +27,6 @@ export class MongoCommentRepository implements CommentRepository {
       userId: new Types.ObjectId(comment.userId),
       content: comment.content,
       parentCommentId: comment.parentCommentId ? new Types.ObjectId(comment.parentCommentId) : undefined,
-      likeCount: comment.likeCount,
       depth: comment.depth,
       isDeleted: comment.isDeleted,
       createdAt: comment.createdAt,
@@ -37,7 +39,7 @@ export class MongoCommentRepository implements CommentRepository {
     return savedComment;
   }
 
-  async findByPostId(postId: string, page: number, limit: number): Promise<ICommentModel[]> {
+  async findByPostId(postId: string, page: number=1, limit: number=10): Promise<ICommentModel[]> {
     const cacheKey = `comments:${postId}:page:${page}:limit:${limit}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
@@ -47,12 +49,11 @@ export class MongoCommentRepository implements CommentRepository {
     const comments = await CommentModel.find({
       postId: new Types.ObjectId(postId),
       parentCommentId: null,
-      isDeleted: false,
     })
       .sort({ createdAt: -1 })
       .skip(page * limit)
       .limit(limit)
-      .populate('userId', 'username profilePicture');
+      .populate('userId', '_id username profilePicture');
 
     if (this.redis.client) {
       await this.redis.setEx(cacheKey, JSON.stringify(comments), 60);
@@ -74,8 +75,8 @@ export class MongoCommentRepository implements CommentRepository {
       .sort({ createdAt: -1 })
       .skip(page * limit)
       .limit(limit)
-      .populate('userId', 'username profilePicture');
-
+      .populate('userId', 'username profilePicture')
+      .lean()
     if (this.redis.client) {
       await this.redis.setEx(cacheKey, JSON.stringify(replies), 60);
     }
@@ -90,14 +91,42 @@ export class MongoCommentRepository implements CommentRepository {
   }
 
   async delete(id: string): Promise<ICommentModel | null> {
+    return await this.softDelete(id,'system')
+  }
+
+  async hasReplies(commendId:string):Promise<boolean>{
+    const count = await CommentModel.countDocuments({
+      parentCommentId: new Types.ObjectId(commendId),
+      isDeleted:false
+    })
+    return count > 0
+  }
+
+  async softDelete(id:string,deletedBy:string):Promise<ICommentModel | null>{
     const comment = await CommentModel.findByIdAndUpdate(
       new Types.ObjectId(id),
-      { content: '[Deleted]', isDeleted: true },
-      { new: true }
-    );
-    if (comment && this.redis.client) {
+      {
+        content:'[Comment deleted]',
+        isDeleted:true,
+        deletedBy:new Types.ObjectId(deletedBy),
+        deletedAt:new Date()
+      },
+      {new:true}
+    ).populate('userId','username profilePicture')
+
+    if(comment && this.redis.client){
+      await this.redis.client.del(`comments:${comment.postId}:page:*`)
+    }
+    return comment
+  }
+
+  async hardDelete(id:string):Promise<ICommentModel|null>{
+    const comment = await CommentModel.findByIdAndDelete(new Types.ObjectId(id))
+    if(comment && this.redis.client){
       await this.redis.client.del(`comments:${comment.postId}:page:*`);
     }
-    return comment;
+    return comment
   }
+
+
 }
