@@ -192,6 +192,14 @@ export default function MessagesPage() {
           receiverId: selectedChat.otherUser._id,
           text: tempMessage.text,
         });
+
+        socket.emit('sendMessage', {
+          chatId: selectedChat._id,
+          senderId: currentUserId,
+          profilePic: currentUser?.profilePicture || "/placeholder.svg",
+          text: tempMessage.text,
+          createdAt: new Date().toISOString(),
+        });
       } catch (error) {
         console.log(error);
         // ADDED: Remove the temp message if sending fails

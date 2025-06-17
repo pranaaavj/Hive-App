@@ -94,11 +94,29 @@ export function setupWebSocket(httpServer: any): Server {
     //chat socket 
     socket.on("joinChat", (chatId: string) => {
       socket.join(chatId)
-
+      console.log(`💬 Socket ${socket.id} joined chat: ${chatId}`);
     })
+    
     socket.on("leaveChat", (chatId: string) => {
       socket.leave(chatId)
+      console.log(`💬 Socket ${socket.id} left chat: ${chatId}`);
     })
+
+    // ADDED: Handle message sending through socket
+    socket.on('sendMessage', (messageData) => {
+      console.log('📤 Message received from client:', messageData);
+      
+      // Broadcast the message to everyone in the chat EXCEPT the sender
+      socket.broadcast.to(messageData.chatId).emit('receiveMessage', {
+        chatId: messageData.chatId,
+        senderId: messageData.senderId,
+        profilePic: messageData.profilePic,
+        text: messageData.text,
+        createdAt: messageData.createdAt,
+      });
+      
+      console.log(`📤 Message broadcasted to chat: ${messageData.chatId}`);
+    });
 
     //for use online status
     socket.on('userConnected', async (userId: string) => {
@@ -117,7 +135,6 @@ export function setupWebSocket(httpServer: any): Server {
     socket.on('requestOnlineUsers', () => {
       socket.emit('onlineUsers', Array.from(onlineUsers.keys()));
     });
-
 
     socket.on('disconnect', async () => {
       const userId = [...onlineUsers.entries()].find(
@@ -138,10 +155,6 @@ export function setupWebSocket(httpServer: any): Server {
       console.log(`❎ Client disconnected: ${socket.id}`);
     });
 
-    socket.on('disconnect', () => {
-      console.log(`❎ Client disconnected: ${socket.id}`);
-    });
-
     socket.on('error', (err) => {
       console.error('⚠️ Socket error:', err);
     });
@@ -154,4 +167,17 @@ export function setupWebSocket(httpServer: any): Server {
 export function getIO(): Server {
   if (!io) throw new Error('❌ Socket.IO not initialized');
   return io;
+}
+
+// ADDED: Helper function to emit messages from API routes (if needed)
+export function broadcastMessage(chatId: string, messageData: any, senderSocketId?: string) {
+  if (!io) return;
+  
+  if (senderSocketId) {
+    // Exclude the sender's socket
+    io.to(chatId).except(senderSocketId).emit('receiveMessage', messageData);
+  } else {
+    // Fallback: broadcast to all in chat (not recommended for new messages)
+    io.to(chatId).emit('receiveMessage', messageData);
+  }
 }

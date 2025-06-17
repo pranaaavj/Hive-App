@@ -16,19 +16,7 @@ export class ChatController {
       if (!senderId || !receiverId || !text) {
         throw new ApiError('missing required fields', 401);
       }
-      const result = await this.chatService.sendMessage(senderId, receiverId, text);
-
-      const {chat, message} = result
-      
-      const io = getIO();
-      io.to(chat._id.toString()).emit('receiveMessage', {
-      chatId: message.chatId.toString(),
-      senderId: message.sender.toString(),
-      profilePic:message.sender.profilePicture,
-      text: message.text,
-      createdAt: message.createdAt,
-    });
-
+      const result = await this.chatService.sendMessage(senderId, receiverId, text);  
   
       res.status(201).json(result);
     } catch (error) {

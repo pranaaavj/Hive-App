@@ -125,7 +125,7 @@ export function ProfileEditPage() {
         profilePicture: profilePictureUrl,
       };
 
-    let updatedProfile = await upadateProfile(updatedData).unwrap()
+    const updatedProfile = await upadateProfile(updatedData).unwrap()
     console.log(updatedProfile,'updatedProfile')
     dispatch(setProfilePicture(updatedProfile.profile.profilePicture))
     setCroppedImage(null);
