@@ -1,6 +1,7 @@
 import { Server } from 'socket.io';
 import { CommentModel } from '../model/commentModel';
 import { UserModel } from '../model/user.model';
+import { MessageModel } from '../model/messageModel';
 
 let io: Server | null = null;
 
@@ -100,6 +101,29 @@ export function setupWebSocket(httpServer: any): Server {
     socket.on("leaveChat", (chatId: string) => {
       socket.leave(chatId)
       console.log(`💬 Socket ${socket.id} left chat: ${chatId}`);
+    })
+
+
+    /// for showing the typing 
+    socket.on('typing',({chatId,senderId})=>{
+      socket.broadcast.to(chatId).emit('userTyping',{chatId,senderId})
+    })
+
+    socket.on('stopTyping',({chatId,senderId})=>{
+      socket.broadcast.to(chatId).emit('userStoppedTyping',{chatId,senderId})
+    })
+
+    ///for message seen 
+    socket.on('messageSeen',async({chatId,receiverId})=>{
+      try {
+        await MessageModel.updateMany(
+          {chatId,sender:{$ne:receiverId},isSeen:false},
+          {$set:{isSeen:true}}
+        )
+        io?.to(chatId).emit('messageSeen',{chatId,seenBy:receiverId})
+      } catch (error) {
+         console.error('Error marking messages as seen:', error);
+      }
     })
 
     // ADDED: Handle message sending through socket

@@ -93,6 +93,7 @@ export default function MessagesPage() {
     useLazyGetMessagesQuery();
   const currentUserId = useSelector((state: RootState) => state.user.user?.id);
   const [sendMessage] = useSendMessageMutation();
+  const [isTyping, setIsTyping] = useState(false);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -125,6 +126,9 @@ export default function MessagesPage() {
       }
     };
   }, [selectedChat, getMessages]);
+
+
+
 
   // ADDED: Socket event listeners setup
   useEffect(() => {
@@ -209,6 +213,57 @@ export default function MessagesPage() {
       }
     }
   };
+
+useEffect(() => {
+  if (!socket || !selectedChat || !currentUserId) return;
+
+  if (newMessage.trim()) {
+    socket.emit("typing", {
+      chatId: selectedChat._id,
+      senderId: currentUserId,
+    });
+
+    const timeout = setTimeout(() => {
+      socket.emit("stopTyping", {
+        chatId: selectedChat._id,
+        senderId: currentUserId,
+      });
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  } else {
+    socket.emit("stopTyping", {
+      chatId: selectedChat._id,
+      senderId: currentUserId,
+    });
+  }
+}, [newMessage, selectedChat, currentUserId]);
+
+
+
+useEffect(() => {
+  if (!socket || !selectedChat) return;
+
+  const handleTyping = ({ chatId }: { chatId: string }) => {
+    if (chatId === selectedChat._id) {
+      setIsTyping(true);
+    }
+  };
+
+  const handleStopTyping = ({ chatId }: { chatId: string }) => {
+    if (chatId === selectedChat._id) {
+      setIsTyping(false);
+    }
+  };
+
+  socket.on("userTyping", handleTyping);
+  socket.on("userStoppedTyping", handleStopTyping);
+
+  return () => {
+    socket.off("userTyping", handleTyping);
+    socket.off("userStoppedTyping", handleStopTyping);
+  };
+}, [socket, selectedChat]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -495,6 +550,12 @@ export default function MessagesPage() {
                 )}
                               </ScrollArea>
               </div>
+
+              {isTyping && (
+                <div className="text-xs text-gray-500 px-4 pb-2">
+                  {selectedChat?.otherUser?.username} is typing...
+                </div>
+              )}
 
               <div className="p-4 border-t bg-white">
                 <div className="flex items-center space-x-2">
