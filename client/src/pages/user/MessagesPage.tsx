@@ -186,7 +186,7 @@ export default function MessagesPage() {
             msg.senderId === currentUserId ? { ...msg, isSeen: true } : msg
           )
         );
-        await refetch()
+        // await refetch()
         // You might also want to refetch messages to update the API cache
         // or update your RTK Query cache here
       }

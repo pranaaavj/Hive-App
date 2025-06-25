@@ -96,6 +96,7 @@ export const AdminLoginPage: React.FC = () => {
     if (!hasErrors) {
       try {
         const res = await login(formData).unwrap();
+        console.log(res,'res from the login')
         console.log(res?.data?.admin)
         dispatch(setAdmin({admin: res.admin}))
         localStorage.setItem('adminAccessToken',res.adminAccessToken)
