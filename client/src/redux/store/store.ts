@@ -6,7 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { postApi } from '@/services/postApi';
 import { commentApi } from '@/services/commentApi';
 import { chatApi } from '@/services/chatApi';
-
+import adminReducer from '../slices/adminSlice'
 // Persist configuration
 const persistConfig = {
   key: 'user',
@@ -14,7 +14,14 @@ const persistConfig = {
   whitelist: ['user'], // Only persist the 'user' field
 };
 
+const persistAdminConfig = {
+  key: 'admin',
+  storage,
+  whitelist: ['admin'], // Only persist the 'user' field
+};
+
 const persistedUserReducer = persistReducer(persistConfig, userReducer);
+const persistAdminReducer = persistReducer(persistAdminConfig,adminReducer)
 
 export const store = configureStore({
   reducer: {
@@ -22,7 +29,8 @@ export const store = configureStore({
     [postApi.reducerPath]:postApi.reducer,
     [commentApi.reducerPath]:commentApi.reducer,
     [chatApi.reducerPath] : chatApi.reducer,
-    user: persistedUserReducer, // Use the persisted version
+    user: persistedUserReducer, 
+    admin:persistAdminReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
