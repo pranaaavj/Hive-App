@@ -9,6 +9,10 @@ export interface LoginFormData {
     password: string
 }
 
+export interface AdminLoginFormData {
+    email: string,
+    password: string
+}
 export interface ResetPasswordFormData {
     password: string;
     confirmPassword: string;
@@ -20,6 +24,13 @@ export interface User {
     email : string,
     profilePicture?:string
 }
+
+export interface Admin{
+    _id:string,
+    adminName:string,
+    email:string
+}
+
 
 // src/types/index.ts
 export interface Story {

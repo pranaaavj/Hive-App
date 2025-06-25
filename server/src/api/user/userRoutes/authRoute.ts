@@ -31,6 +31,5 @@ router.post('/register', userController.register.bind(userController));
   router.post('/forgot-password',  userController.forgotPassword.bind(userController)); // Bind forgotPassword
   router.get('/verify-forgot-email/:token', userController.forgotVerifyEmail.bind(userController)); // Bind forgotVerifyEmail
   router.post('/reset-password', userController.resetPassword.bind(userController)); // Bind resetPassword
-
   return router;
 }

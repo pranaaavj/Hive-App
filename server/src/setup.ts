@@ -18,15 +18,25 @@ import { MongoChatRepository } from "./application/repositories/chatRepository";
 import { ChatService } from "./application/usecases/chatService";
 import { MongoMessageRepository } from "./application/repositories/messageRepository";
 import { ChatController } from "./api/user/userControllers/chatController";
+
 import { MongoNotificationRepository } from "./application/repositories/notificationRepository";
 import { NotificationService } from "./application/usecases/notificationService";
 import { NotificationController } from "./api/user/userControllers/notificationController";
+
+import { MongoAdminRepository } from "./application/repositories/admin.repository";
+import { AdminService } from "./application/usecases/admin.service";
+import { AdminController } from "./api/admin/adminController/adminAuthController";
+
 
 
 
     const userRepository = new MongoUserRepository()
     const userService = new UserService(userRepository)
     const userController = new UserController(userService)
+
+    const adminRepository = new MongoAdminRepository()
+    const adminService = new AdminService(adminRepository)
+    const adminController = new AdminController(adminService)
 
     const postRepository = new MongoPostRepository()
     const postService = new PostService(postRepository)
@@ -66,5 +76,6 @@ import { NotificationController } from "./api/user/userControllers/notificationC
         profileController,
         homeController,
         chatController,
-        notificationController
+        notificationController,
+        adminController
     }

@@ -91,7 +91,7 @@ export default function MessagesPage() {
   const { onlineUsers } = useOnlineUsers();
   const [
     getMessages,
-    { data: userMessages, isLoading: messagesLoading, refetch },
+    { data: userMessages, isLoading: messagesLoading},
   ] = useLazyGetMessagesQuery();
   const currentUserId = useSelector((state: RootState) => state.user.user?.id);
   const [sendMessage] = useSendMessageMutation();
@@ -309,6 +309,40 @@ export default function MessagesPage() {
       socket.off("userStoppedTyping", handleStopTyping);
     };
   }, [socket, selectedChat]);
+
+
+useEffect(()=>{
+  if(!socket || !selectedChat || !currentUserId) return
+  const markMessagesAsSeen = ()=>{
+    socket.emit('messageSeen',{
+      chatId:selectedChat._id,
+      receiverId:selectedChat.otherUser._id,
+    })
+  }
+  markMessagesAsSeen()
+
+},[selectedChat,realtimeMessages,currentUserId])
+
+useEffect(() => {
+  const handleMessageSeen = ({ chatId, seenBy }: { chatId: string; seenBy: string }) => {
+    if (selectedChat && chatId === selectedChat._id) {
+      setRealtimeMessages(prev =>
+        prev.map(msg =>
+          msg.senderId === currentUserId
+            ? { ...msg, isSeen: true }
+            : msg
+        )
+      );
+    }
+  };
+
+  socket.on('messageSeen', handleMessageSeen);
+
+  return () => {
+    socket.off('messageSeen', handleMessageSeen);
+  };
+}, [selectedChat, currentUserId]);
+
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);

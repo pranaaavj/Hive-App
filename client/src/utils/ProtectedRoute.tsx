@@ -10,11 +10,14 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   
     useEffect(() => {
       const accessToken = localStorage.getItem("accessToken");
-  
+      const adminAccess = localStorage.getItem("adminAccessToken")
       if (!accessToken) {
         navigate("/login");
+      }else if(!adminAccess){
+        navigate('/adminlogin')
       }
     }, [navigate]);
+    
   
     return <>{children}</>;
   };

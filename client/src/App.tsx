@@ -13,7 +13,8 @@ import { setupPostSocketListeners } from './lib/socketListeners'
 import { useEffect } from 'react'
 import MessagesPage from './pages/user/MessagesPage'
 import { useSocketAuth } from './hooks/useSocketAuth'
-
+import { AdminLoginPage } from './pages/AdminLoginPage'
+import { AdminHomePage } from './pages/user/AdminHomePage'
 function App() {
   useSocketAuth();
    useEffect(() => {
@@ -25,7 +26,7 @@ function App() {
       <Route path='/login' element={<LoginPage />} />
       <Route path='/forget-password' element={<ForgetPasswordPage />} />
       <Route path='/reset-password' element={<ResetPasswordPage />} />
-      
+      <Route path='/adminlogin' element={<AdminLoginPage />} />
      
       <Route element={
         <ProtectedRoute>
@@ -37,6 +38,15 @@ function App() {
         <Route path='/profile/edit/:userId' element={<ProfileEditPage />} />
         <Route path='/messages' element={<MessagesPage />} />
       </Route>
+
+       <Route element={
+        <ProtectedRoute>
+          <Route path="/adminhome" element={<AdminHomePage />} />
+        </ProtectedRoute>
+      }>
+      </Route>
+
+
     </Routes>
   )
 }
