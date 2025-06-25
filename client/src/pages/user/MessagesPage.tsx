@@ -26,7 +26,7 @@ import { UseSelector } from "react-redux";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 // ADDED: Import socket configuration
-import { socket } from "../../lib/socket"
+import { socket } from "../../lib/socket";
 
 // TypeScript interfaces
 interface User {
@@ -70,7 +70,7 @@ interface Chat {
 interface SocketMessage {
   chatId: string;
   senderId: string;
-  profilePic?:string;
+  profilePic?: string;
   text: string;
   createdAt: string;
 }
@@ -80,17 +80,19 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserDetails, setShowUserDetails] = useState(false);
-  const currentUser = useSelector((state:RootState)=>state.user.user)
+  const currentUser = useSelector((state: RootState) => state.user.user);
   // ADDED: State to store real-time messages
   const [realtimeMessages, setRealtimeMessages] = useState<ApiMessage[]>([]);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
+
   const { data: userChats, isLoading } = useGetChatsQuery(undefined);
   const { onlineUsers } = useOnlineUsers();
-  const [getMessages, { data: userMessages, isLoading: messagesLoading }] =
-    useLazyGetMessagesQuery();
+  const [
+    getMessages,
+    { data: userMessages, isLoading: messagesLoading, refetch },
+  ] = useLazyGetMessagesQuery();
   const currentUserId = useSelector((state: RootState) => state.user.user?.id);
   const [sendMessage] = useSendMessageMutation();
   const [isTyping, setIsTyping] = useState(false);
@@ -118,7 +120,7 @@ export default function MessagesPage() {
       // ADDED: Clear previous real-time messages when switching chats
       setRealtimeMessages([]);
     }
-    
+
     // ADDED: Leave the previous chat room when switching
     return () => {
       if (selectedChat) {
@@ -127,15 +129,16 @@ export default function MessagesPage() {
     };
   }, [selectedChat, getMessages]);
 
-
-
-
   // ADDED: Socket event listeners setup
   useEffect(() => {
     // ADDED: Listen for incoming messages
     const handleReceiveMessage = (data: SocketMessage) => {
       // Only add message if it's for the current chat AND it's from another user
-      if (selectedChat && data.chatId === selectedChat._id && data.senderId !== currentUserId) {
+      if (
+        selectedChat &&
+        data.chatId === selectedChat._id &&
+        data.senderId !== currentUserId
+      ) {
         const newRealtimeMessage: ApiMessage = {
           messageId: `temp-received-${Date.now()}`,
           text: data.text,
@@ -144,9 +147,13 @@ export default function MessagesPage() {
           profilePic: data.profilePic || "/placeholder.svg",
           senderId: data.senderId,
         };
-        
-        setRealtimeMessages(prev => [...prev, newRealtimeMessage]);
-        
+
+        setRealtimeMessages((prev) => [...prev, newRealtimeMessage]);
+
+        socket.emit("messageSeen", {
+          chatId: selectedChat._id,
+          receiverId: currentUserId,
+        });
         // Auto-scroll when new message arrives
         setTimeout(() => {
           scrollToBottom();
@@ -163,6 +170,46 @@ export default function MessagesPage() {
     };
   }, [selectedChat, currentUserId]);
 
+  useEffect(() => {
+    // Listen for message seen updates
+    const handleMessageSeen = async ({
+      chatId,
+      seenBy,
+    }: {
+      chatId: string;
+      seenBy: string;
+    }) => {
+      if (selectedChat && chatId === selectedChat._id) {
+        // Update both API messages and realtime messages
+        setRealtimeMessages((prev) =>
+          prev.map((msg) =>
+            msg.senderId === currentUserId ? { ...msg, isSeen: true } : msg
+          )
+        );
+        await refetch()
+        // You might also want to refetch messages to update the API cache
+        // or update your RTK Query cache here
+      }
+    };
+
+    socket.on("messageSeen", handleMessageSeen);
+
+    return () => {
+      socket.off("messageSeen", handleMessageSeen);
+    };
+  }, [selectedChat, currentUserId]);
+
+  // ADDED: Effect to mark messages as seen when viewing a chat
+  useEffect(() => {
+    if (selectedChat && currentUserId) {
+      // Mark messages as seen when opening/viewing a chat
+      socket.emit("messageSeen", {
+        chatId: selectedChat._id,
+        receiverId: currentUserId,
+      });
+    }
+  }, [selectedChat, currentUserId]);
+
   const filteredChats =
     userChats?.filter((chat: ChatPreview) =>
       chat.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase())
@@ -172,7 +219,7 @@ export default function MessagesPage() {
   const handleSendMessage = async () => {
     if (newMessage.trim() && selectedChat) {
       // ADDED: Immediately add the sent message to real-time messages for instant display
-      
+
       const tempMessage: ApiMessage = {
         messageId: `temp-sent-${Date.now()}`,
         text: newMessage,
@@ -181,15 +228,15 @@ export default function MessagesPage() {
         profilePic: currentUser?.profilePicture || "/placeholder.svg", // You might want to use current user's profile pic here
         senderId: currentUserId,
       };
-      
-      setRealtimeMessages(prev => [...prev, tempMessage]);
+
+      setRealtimeMessages((prev) => [...prev, tempMessage]);
       setNewMessage("");
-      
+
       // Auto-scroll immediately
       setTimeout(() => {
         scrollToBottom();
       }, 100);
-      
+
       try {
         await sendMessage({
           senderId: currentUserId,
@@ -197,7 +244,7 @@ export default function MessagesPage() {
           text: tempMessage.text,
         });
 
-        socket.emit('sendMessage', {
+        socket.emit("sendMessage", {
           chatId: selectedChat._id,
           senderId: currentUserId,
           profilePic: currentUser?.profilePicture || "/placeholder.svg",
@@ -207,63 +254,61 @@ export default function MessagesPage() {
       } catch (error) {
         console.log(error);
         // ADDED: Remove the temp message if sending fails
-        setRealtimeMessages(prev => 
-          prev.filter(msg => msg.messageId !== tempMessage.messageId)
+        setRealtimeMessages((prev) =>
+          prev.filter((msg) => msg.messageId !== tempMessage.messageId)
         );
       }
     }
   };
 
-useEffect(() => {
-  if (!socket || !selectedChat || !currentUserId) return;
+  useEffect(() => {
+    if (!socket || !selectedChat || !currentUserId) return;
 
-  if (newMessage.trim()) {
-    socket.emit("typing", {
-      chatId: selectedChat._id,
-      senderId: currentUserId,
-    });
+    if (newMessage.trim()) {
+      socket.emit("typing", {
+        chatId: selectedChat._id,
+        senderId: currentUserId,
+      });
 
-    const timeout = setTimeout(() => {
+      const timeout = setTimeout(() => {
+        socket.emit("stopTyping", {
+          chatId: selectedChat._id,
+          senderId: currentUserId,
+        });
+      }, 2000);
+
+      return () => clearTimeout(timeout);
+    } else {
       socket.emit("stopTyping", {
         chatId: selectedChat._id,
         senderId: currentUserId,
       });
-    }, 2000);
-
-    return () => clearTimeout(timeout);
-  } else {
-    socket.emit("stopTyping", {
-      chatId: selectedChat._id,
-      senderId: currentUserId,
-    });
-  }
-}, [newMessage, selectedChat, currentUserId]);
-
-
-
-useEffect(() => {
-  if (!socket || !selectedChat) return;
-
-  const handleTyping = ({ chatId }: { chatId: string }) => {
-    if (chatId === selectedChat._id) {
-      setIsTyping(true);
     }
-  };
+  }, [newMessage, selectedChat, currentUserId]);
 
-  const handleStopTyping = ({ chatId }: { chatId: string }) => {
-    if (chatId === selectedChat._id) {
-      setIsTyping(false);
-    }
-  };
+  useEffect(() => {
+    if (!socket || !selectedChat) return;
 
-  socket.on("userTyping", handleTyping);
-  socket.on("userStoppedTyping", handleStopTyping);
+    const handleTyping = ({ chatId }: { chatId: string }) => {
+      if (chatId === selectedChat._id) {
+        setIsTyping(true);
+      }
+    };
 
-  return () => {
-    socket.off("userTyping", handleTyping);
-    socket.off("userStoppedTyping", handleStopTyping);
-  };
-}, [socket, selectedChat]);
+    const handleStopTyping = ({ chatId }: { chatId: string }) => {
+      if (chatId === selectedChat._id) {
+        setIsTyping(false);
+      }
+    };
+
+    socket.on("userTyping", handleTyping);
+    socket.on("userStoppedTyping", handleStopTyping);
+
+    return () => {
+      socket.off("userTyping", handleTyping);
+      socket.off("userStoppedTyping", handleStopTyping);
+    };
+  }, [socket, selectedChat]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -452,103 +497,109 @@ useEffect(() => {
             >
               <div className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
-                {messagesLoading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-sm text-gray-500">
-                      Loading messages...
+                  {messagesLoading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-sm text-gray-500">
+                        Loading messages...
+                      </div>
                     </div>
-                  </div>
-                ) : userMessages?.data?.messages?.length > 0 || realtimeMessages.length > 0 ? (
-                  <div className="space-y-4">
-                    {Object.entries(
-                      groupMessagesByDate(userMessages?.data?.messages || [])
-                    ).map(([date, messages]) => (
-                      <div key={date}>
-                        <div className="flex items-center justify-center my-4">
-                          <div className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
-                            {date}
+                  ) : userMessages?.data?.messages?.length > 0 ||
+                    realtimeMessages.length > 0 ? (
+                    <div className="space-y-4">
+                      {Object.entries(
+                        groupMessagesByDate(userMessages?.data?.messages || [])
+                      ).map(([date, messages]) => (
+                        <div key={date}>
+                          <div className="flex items-center justify-center my-4">
+                            <div className="bg-gray-100 text-gray-500 text-xs px-3 py-1 rounded-full">
+                              {date}
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="space-y-3">
-                          {messages.map((message: ApiMessage) => {
-                            const isCurrentUser =
-                              message.senderId === currentUserId ||
-                              !message.senderId;
+                          <div className="space-y-3">
+                            {messages.map((message: ApiMessage) => {
+                              const isCurrentUser =
+                                message.senderId === currentUserId ||
+                                !message.senderId;
 
-                            return (
-                              <div
-                                key={message.messageId}
-                                className={`flex ${
-                                  isCurrentUser
-                                    ? "justify-end"
-                                    : "justify-start"
-                                }`}
-                              >
+                              return (
                                 <div
-                                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                  key={message.messageId}
+                                  className={`flex ${
                                     isCurrentUser
-                                      ? "bg-blue-500 text-white"
-                                      : "bg-gray-200 text-gray-900"
+                                      ? "justify-end"
+                                      : "justify-start"
                                   }`}
                                 >
-                                  <div className="flex gap-2">
-                                    <div className="h-7 w-7">
-                                      <img
-                                        className="object-contain"
-                                        src={message?.profilePic}
-                                        alt="Profile"
-                                      />
-                                    </div>
-                                    <p className="text-sm">{message.text}</p>
-                                  </div>
-                                  <div className="flex items-center justify-between mt-1">
-                                    <p
-                                      className={`text-xs ${
-                                        isCurrentUser
-                                          ? "text-blue-100"
-                                          : "text-gray-500"
-                                      }`}
-                                    >
-                                      {formatTime(message.createdAt)}
-                                    </p>
-                                    {isCurrentUser && (
-                                      <div className="ml-2">
-                                        {message.isSeen ? (
-                                          <div className="text-blue-100 text-xs">
-                                            ✓✓
-                                          </div>
-                                        ) : (
-                                          <div className="text-blue-200 text-xs">
-                                            ✓
-                                          </div>
-                                        )}
+                                  <div
+                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                                      isCurrentUser
+                                        ? "bg-blue-500 text-white"
+                                        : "bg-gray-200 text-gray-900"
+                                    }`}
+                                  >
+                                    <div className="flex gap-2">
+                                      <div className="h-7 w-7">
+                                        <img
+                                          className="object-contain"
+                                          src={message?.profilePic}
+                                          alt="Profile"
+                                        />
                                       </div>
-                                    )}
+                                      <p className="text-sm">{message.text}</p>
+                                    </div>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <p
+                                        className={`text-xs ${
+                                          isCurrentUser
+                                            ? "text-blue-100"
+                                            : "text-gray-500"
+                                        }`}
+                                      >
+                                        {formatTime(message.createdAt)}
+                                      </p>
+                                      {isCurrentUser && (
+                                        <div className="ml-2 flex items-center text-blue-100 text-xs">
+                                          {message.isSeen ? (
+                                            // Double tick for seen messages
+                                            <div className="text-blue-100 text-xs flex">
+                                              <span>✓</span>
+                                              <span className="ml-[-2px]">
+                                                ✓
+                                              </span>
+                                            </div>
+                                          ) : (
+                                            // Single tick for sent but not seen messages
+                                            <div className="text-blue-200 text-xs">
+                                              ✓
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <div className="text-gray-400 mb-2">
-                        <Send className="h-12 w-12 mx-auto" />
-                      </div>
-                      <p className="text-gray-500">No messages yet</p>
-                      <p className="text-sm text-gray-400">
-                        Start a conversation!
-                      </p>
+                      ))}
+                      <div ref={messagesEndRef} />
                     </div>
-                  </div>
-                )}
-                              </ScrollArea>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <div className="text-gray-400 mb-2">
+                          <Send className="h-12 w-12 mx-auto" />
+                        </div>
+                        <p className="text-gray-500">No messages yet</p>
+                        <p className="text-sm text-gray-400">
+                          Start a conversation!
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </ScrollArea>
               </div>
 
               {isTyping && (

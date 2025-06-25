@@ -1,7 +1,9 @@
+import { Types } from 'mongoose';
 import { SearchUsers } from '../../domain/entities/profileEntity';
 import { ProfileSummary } from '../../domain/entities/user.entity';
 import { IUserModel } from '../../infrastructure/model/user.model';
 import { ApiError } from '../../utils/apiError';
+import { createAndEmitNotification } from '../../utils/sendNotification';
 import { ProfileRepository } from '../repositories/profileRepository';
 
 export class ProfileService {
@@ -31,6 +33,17 @@ export class ProfileService {
       throw new Error('User Not found or could not follow the User');
     }
 
+    if(followingUserId !== userId) {
+      
+      await createAndEmitNotification({
+        userId: new Types.ObjectId(followingUserId),
+        fromUser: new Types.ObjectId(userId),
+        type: "follow",
+        message: "Started Following You",
+    })
+    
+
+    }
     return user as ProfileSummary;
   }
   async searchUsers(query: string): Promise<SearchUsers> {

@@ -20,7 +20,7 @@ export const postApi = createApi({
     }),
 
     likePost: builder.mutation({
-      query: (postId) => ({
+      query: ({postId}) => ({
         url: `/post/${postId}/like`,
         method: 'POST',
         credentials: 'include',
@@ -34,7 +34,7 @@ export const postApi = createApi({
         method: 'POST',
         credentials: 'include',
       }),
-      invalidatesTags: (result, error, postId) => [{ type: 'Post', id: postId }],
+      // invalidatesTags: (result, error, postId) => [{ type: 'Post', id: postId }],
     }),
 
     addStory: builder.mutation({

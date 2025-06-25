@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { ProfileSummary, User } from '../../domain/entities/user.entity';
+import { ProfileSummary, User, } from '../../domain/entities/user.entity';
 import { UserModel } from '../../infrastructure/model/user.model';
 import { RedisClient } from '../../infrastructure/cache/redis';
 import { SearchUsers } from '../../domain/entities/profileEntity';
@@ -14,6 +14,10 @@ export interface ProfileRepository {
   updateProfile(userId: string, updatedData: object) : Promise<ProfileSummary | null>
   findFollowingUsers(userId: string) : Promise<ProfileSummary[] | null>
   findFollowedUsers(userId: string) : Promise<ProfileSummary[] | null>
+  getMutualFollowStatus(userAId: string, userBId: string): Promise<{
+    isFollowing: boolean;
+    isFollowed: boolean;
+  }>;
 }
 
 export class MongoProfileRepository implements ProfileRepository {
@@ -22,6 +26,7 @@ export class MongoProfileRepository implements ProfileRepository {
   constructor() {
     this.redis = new RedisClient();
   }
+
 
   async updateProfileImage(userId: string, imageUrl: string): Promise<User | null> {
     console.log(imageUrl);
@@ -179,5 +184,21 @@ export class MongoProfileRepository implements ProfileRepository {
     }
     return user.followers as unknown as ProfileSummary[] | null
 
+  }
+  async getMutualFollowStatus(userAId: string, userBId: string): Promise<{
+    isFollowing: boolean; // A is following B
+    isFollowed: boolean;  // B is following A
+  }> {
+    const [userA, userB] = await Promise.all([
+      UserModel.findById(userAId, { following: 1 }),
+      UserModel.findById(userBId, { following: 1 }),
+    ]);
+  
+    if (!userA || !userB) return { isFollowing: false, isFollowed: false };
+  
+    const isFollowing = userA.following.some((id) => id.equals(userBId)); // A ➝ B
+    const isFollowed = userB.following.some((id) => id.equals(userAId));  // B ➝ A
+  
+    return { isFollowing, isFollowed };
   }
 }

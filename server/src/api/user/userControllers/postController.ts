@@ -100,11 +100,11 @@ import { RequestWithUser } from '../../../types/RequestWithUser';
       }
     };
   
-    likePost = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    likePost = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
       try {
         const { id } = req.params;
-        const userReq = req as RequestWithUser;
-        const userId = userReq.user?.userId;
+
+        const userId = req.user?.userId;
   
         if (!userId) {
           throw new ApiError('User not authenticated', 401);

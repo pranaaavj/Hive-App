@@ -18,6 +18,9 @@ import { MongoChatRepository } from "./application/repositories/chatRepository";
 import { ChatService } from "./application/usecases/chatService";
 import { MongoMessageRepository } from "./application/repositories/messageRepository";
 import { ChatController } from "./api/user/userControllers/chatController";
+import { MongoNotificationRepository } from "./application/repositories/notificationRepository";
+import { NotificationService } from "./application/usecases/notificationService";
+import { NotificationController } from "./api/user/userControllers/notificationController";
 
 
 
@@ -49,6 +52,10 @@ import { ChatController } from "./api/user/userControllers/chatController";
     const chatService = new ChatService(chatRepository,messageRepository,userRepository)
     const chatController = new ChatController(chatService)
 
+    const notificationRepository = new MongoNotificationRepository()
+    const notificationService = new NotificationService(notificationRepository)
+    const notificationController = new NotificationController(notificationService)
+
 
 
 
@@ -58,5 +65,6 @@ import { ChatController } from "./api/user/userControllers/chatController";
         commentController,
         profileController,
         homeController,
-        chatController
+        chatController,
+        notificationController
     }

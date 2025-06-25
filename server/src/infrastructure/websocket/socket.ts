@@ -5,7 +5,7 @@ import { MessageModel } from '../model/messageModel';
 
 let io: Server | null = null;
 
-const onlineUsers = new Map<string, string>()
+export const onlineUsers = new Map<string, string>()
 
 function setupChangeStream() {
   const changeStream = CommentModel.watch(
@@ -103,7 +103,6 @@ export function setupWebSocket(httpServer: any): Server {
       console.log(`💬 Socket ${socket.id} left chat: ${chatId}`);
     })
 
-
     /// for showing the typing 
     socket.on('typing',({chatId,senderId})=>{
       socket.broadcast.to(chatId).emit('userTyping',{chatId,senderId})
@@ -113,20 +112,35 @@ export function setupWebSocket(httpServer: any): Server {
       socket.broadcast.to(chatId).emit('userStoppedTyping',{chatId,senderId})
     })
 
-    ///for message seen 
-    socket.on('messageSeen',async({chatId,receiverId})=>{
+    ///for message seen - UPDATED with better error handling and logging
+    socket.on('messageSeen', async({chatId, receiverId}) => {
       try {
-        await MessageModel.updateMany(
-          {chatId,sender:{$ne:receiverId},isSeen:false},
-          {$set:{isSeen:true}}
-        )
-        io?.to(chatId).emit('messageSeen',{chatId,seenBy:receiverId})
+        console.log(`👁️ Marking messages as seen in chat: ${chatId} by user: ${receiverId}`);
+        
+        const result = await MessageModel.updateMany(
+          {
+            chatId,
+            sender: { $ne: receiverId },
+            isSeen: false
+          },
+          { $set: { isSeen: true } }
+        );
+
+        console.log(`✅ Marked ${result.modifiedCount} messages as seen`);
+        
+        // Broadcast to all users in the chat that messages have been seen
+        io?.to(chatId).emit('messageSeen', {
+          chatId,
+          seenBy: receiverId
+        });
+
       } catch (error) {
-         console.error('Error marking messages as seen:', error);
+         console.error('❌ Error marking messages as seen:', error);
+         socket.emit('error', 'Failed to mark messages as seen');
       }
     })
 
-    // ADDED: Handle message sending through socket
+    // Handle message sending through socket
     socket.on('sendMessage', (messageData) => {
       console.log('📤 Message received from client:', messageData);
       
@@ -142,7 +156,7 @@ export function setupWebSocket(httpServer: any): Server {
       console.log(`📤 Message broadcasted to chat: ${messageData.chatId}`);
     });
 
-    //for use online status
+    //for user online status
     socket.on('userConnected', async (userId: string) => {
       console.log(`🟢 User Connected ID: ${userId}`);
       onlineUsers.set(userId, socket.id);
@@ -173,7 +187,7 @@ export function setupWebSocket(httpServer: any): Server {
         });
 
         console.log(`🔴 User ${userId} is now offline`);
-        io?.emit('userOffline', userId); // Optional broadcast
+        io?.emit('userOffline', userId);
       }
 
       console.log(`❎ Client disconnected: ${socket.id}`);
@@ -193,7 +207,7 @@ export function getIO(): Server {
   return io;
 }
 
-// ADDED: Helper function to emit messages from API routes (if needed)
+// Helper function to emit messages from API routes (if needed)
 export function broadcastMessage(chatId: string, messageData: any, senderSocketId?: string) {
   if (!io) return;
   

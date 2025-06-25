@@ -12,13 +12,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { NotificationsSidebar } from "./NotificartionsSidebar"
+import { NotificationsSidebar } from "./NotificationsSidebar"
 import { useSearchUsersQuery } from "@/services/authApi"
 import { useAppSelector } from "@/hooks/reduxHooks"
 import { useLogoutUserMutation } from "@/services/authApi"
 import { useDispatch } from "react-redux"
 import { logout } from "@/redux/slices/userSlice"
 import { socket } from "@/lib/socket"
+
 
 interface AppSidebarProps {
   onCreateClick?: () => void
@@ -41,6 +42,7 @@ export function AppSidebar({ onCreateClick, minimalMode }: AppSidebarProps) {
     skip: query?.length < 2,
   })
   const [logoutUser] = useLogoutUserMutation()
+
 
   // Determine if we should use minimal mode based on current route or prop
   const isMinimalMode = minimalMode || MINIMAL_MODE_PAGES.includes(location.pathname)

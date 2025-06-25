@@ -14,6 +14,7 @@ export interface PostRepository {
   findByUserId(userId: string, page: number, limit: number): Promise<IPostModel[]>;
   updateCommentCount(postId: string, increment: number): Promise<void>;
   findUserPost(userId:string,page:number,limit:number):Promise<{posts:IPostModel[],hasMore:boolean}>
+  getUserByPost(postId:string):Promise<IPostModel | null>
 }
 
 export class MongoPostRepository implements PostRepository {
@@ -107,6 +108,10 @@ export class MongoPostRepository implements PostRepository {
   }
 
   async likePost(postId: string, userId: string): Promise<IPostModel | null> {
+
+    if(this.redis.client) {
+      await this.redis.client.del(`post:${postId}`)
+    }
     const post = await PostModel.findOneAndUpdate(
       { _id: new Types.ObjectId(postId), isDeleted: false, likes: { $ne: new Types.ObjectId(userId) } },
       { $addToSet: { likes: new Types.ObjectId(userId) }, $inc: { likeCount: 1 } },
@@ -127,13 +132,17 @@ export class MongoPostRepository implements PostRepository {
   }
 
   async unlikePost(postId: string, userId: string): Promise<IPostModel | null> {
+
+    if(this.redis.client) {
+      await this.redis.client.del(`post:${postId}`)
+    }
     const post = await PostModel.findOneAndUpdate(
       { _id: new Types.ObjectId(postId), isDeleted: false, likes: new Types.ObjectId(userId) },
       { $pull: { likes: new Types.ObjectId(userId) }, $inc: { likeCount: -1 } },
       { new: true }
     ).populate('userId', 'username profilePicture');
     if (post && this.redis.client) {
-      await this.redis.setEx(`post:${postId}`, JSON.stringify(post), 60);
+      await this.redis.setEx(`post:${postId}`, JSON.stringify(post), 60 );
     }
     if(post){
       const io = getIO()
@@ -229,12 +238,15 @@ export class MongoPostRepository implements PostRepository {
           const hasMore = posts.length > limit
           const trimmedPosts = hasMore ? posts.slice(0,limit):posts
           if(trimmedPosts.length > 0){
-            await this.redis.setEx(cacheKey,JSON.stringify({posts:trimmedPosts,hasMore}),60)
+            await this.redis.setEx(cacheKey,JSON.stringify({posts:trimmedPosts,hasMore}),1)
           }
           return {posts:trimmedPosts,hasMore}
     } catch (error) {
       console.warn('Error in findUserPost:', error);
       return {posts:[],hasMore:false}
     }
+  }
+  async getUserByPost(postId: string): Promise<IPostModel | null> {
+    return await PostModel.findOne({_id:postId}).select({_id:false,'userId':true, imageUrls: true})
   }
 }

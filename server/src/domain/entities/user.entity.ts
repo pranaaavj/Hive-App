@@ -30,7 +30,6 @@ export interface ProfileSummary {
   updatedAt: Date;
 }
 
-
 export class User {
   constructor(
     public _id: string,

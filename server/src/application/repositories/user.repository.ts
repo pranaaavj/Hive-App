@@ -38,16 +38,16 @@ export class MongoUserRepository implements UserRepository {
   }
 
   async findById(id: string): Promise<IUserModel | null> {
-    const cacheKey = `user:${id}`;
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached);
-    }
+    // const cacheKey = `user:${id}`;
+    // const cached = await this.redis.get(cacheKey);
+    // if (cached) {
+    //   return JSON.parse(cached);
+    // }
 
     const user = await UserModel.findOne({ _id: new Types.ObjectId(id), isDeleted: false });
-    if (user && this.redis.client) {
-      await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
-    }
+    // if (user && this.redis.client) {
+    //   await this.redis.setEx(cacheKey, JSON.stringify(user), 60);
+    // }
     return user;
   }
 

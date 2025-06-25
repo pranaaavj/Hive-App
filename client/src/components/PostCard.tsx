@@ -47,7 +47,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
         setIsLiked(false)
          setLikeCount((prev) => prev - 1); 
       }else{
-        await likePost(post._id)
+        await likePost({postId:post._id})
         setIsLiked(true)
          setLikeCount((prev) => prev + 1);
       }
