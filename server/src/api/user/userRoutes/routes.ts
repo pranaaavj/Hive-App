@@ -8,7 +8,8 @@ import {
   homeController,
   chatController,
   notificationController,
-  adminController
+  adminController,
+  adminUserManagementController
 
 } from '../../../setup';
 import { setupPostRoutes } from './postRoute';
@@ -20,7 +21,7 @@ import { setUpChatRoutes } from './chatRoute';
 import { setUpNotificationRoutes } from './notificationRouts';
 
 import { setupAdminAuthRoutes } from './adminRoutes';
-
+import { setupAdminUserManagementRoutes } from '../../admin/adminRoutes/adminUserManagementRoutes';
 const router = Router();
 
 router.use('/auth', setupUserRoutes(userController));
@@ -30,6 +31,8 @@ router.use('/comments', setupCommentRoutes(commentController));
 router.use('/home', setUpHomeRoutes(homeController));
 router.use('/messages',setUpChatRoutes(chatController))
 router.use("/notifications", setUpNotificationRoutes(notificationController))
+
 router.use('/admin',setupAdminAuthRoutes(adminController))
+router.use('/admin',setupAdminUserManagementRoutes(adminUserManagementController))
 
 export { router };

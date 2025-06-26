@@ -1,6 +1,11 @@
 import { Schema, model, Document, Types } from 'mongoose';
 import { comparePassword, hashPassword } from '../../utils/hash';
 
+export enum UserStatusEnum {
+  Active = 'active',
+  Suspended = 'suspended',
+}
+
 export interface IUserModel extends Document {
   username: string;
   email: string;
@@ -14,6 +19,7 @@ export interface IUserModel extends Document {
   followers: Types.ObjectId[];
   following: Types.ObjectId[];
   isOnline: boolean,
+  status:UserStatusEnum,
   lastActive?: Date
   isDeleted: boolean;
   createdAt: Date;
@@ -32,6 +38,11 @@ const userSchema = new Schema<IUserModel>(
     isDeleted: { type: Boolean, default: false },
     profilePicture: {type: String, default: ""},
     bio: {type: String, default: ""},
+    status:{
+      type:String,
+      enum:Object.values(UserStatusEnum),
+      default:UserStatusEnum.Active
+    },
     postsCount: {type: Number, default: 0},
     followers: [{type: Schema.Types.ObjectId, ref: "User", default: []}],
     following: [{type: Schema.Types.ObjectId, ref: "User", default: []}],

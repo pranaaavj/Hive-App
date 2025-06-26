@@ -26,6 +26,9 @@ import { NotificationController } from "./api/user/userControllers/notificationC
 import { MongoAdminRepository } from "./application/repositories/admin.repository";
 import { AdminService } from "./application/usecases/admin.service";
 import { AdminController } from "./api/admin/adminController/adminAuthController";
+import { MongoAdminUserManagementRepository } from "./application/repositories/adminUserManagementRepository";
+import { AdminUserManagementService } from "./application/usecases/adminUserManagement.service";
+import { AdminUserManagementController } from "./api/admin/adminController/adminUserManagement";
 
 
 
@@ -66,7 +69,9 @@ import { AdminController } from "./api/admin/adminController/adminAuthController
     const notificationService = new NotificationService(notificationRepository)
     const notificationController = new NotificationController(notificationService)
 
-
+    const adminUserManagementRepository = new MongoAdminUserManagementRepository()
+    const adminUserManagementService = new AdminUserManagementService(adminUserManagementRepository)
+    const adminUserManagementController = new AdminUserManagementController(adminUserManagementService)
 
 
     export {
@@ -77,5 +82,6 @@ import { AdminController } from "./api/admin/adminController/adminAuthController
         homeController,
         chatController,
         notificationController,
-        adminController
+        adminController,
+        adminUserManagementController
     }
