@@ -3,6 +3,7 @@ import { UserModel} from '../../infrastructure/model/user.model';
 
 export interface UserManagement {
   _id: Types.ObjectId;
+  isVerfied:boolean
   username: string;
   email: string;
   profilePicture?: string;
@@ -15,6 +16,7 @@ export interface UserManagement {
 export interface AdminUserManagementRepository {
   getAllUsers(): Promise<UserManagement[] | null>;
   suspendUser(userId:string,status:boolean):Promise<UserManagement | null>
+  userCountAndSuspendCount():Promise<{userCount:number, suspendedUser:number}>
 }
 
 export class MongoAdminUserManagementRepository implements AdminUserManagementRepository {
@@ -29,6 +31,7 @@ export class MongoAdminUserManagementRepository implements AdminUserManagementRe
     return allUsers.map((user) => ({
       _id: user._id as Types.ObjectId,
       username: user.username,
+      isVerfied:user.isVerified,
       email: user.email,
       profilePicture: user.profilePicture ?? "",
       status: user.status,
@@ -41,5 +44,10 @@ export class MongoAdminUserManagementRepository implements AdminUserManagementRe
   async suspendUser(userId: string,status:boolean): Promise<UserManagement | null> {
     const result = await UserModel.findByIdAndUpdate(userId,{$set:{status:status}},{new:true})
     return result as UserManagement|null
+  }
+  async userCountAndSuspendCount(): Promise<{userCount:number, suspendedUser:number}> {
+    const userCount = await UserModel.countDocuments({isVerified:true})
+    const suspendedUser = await UserModel.countDocuments({status:false})
+    return{userCount,suspendedUser}
   }
 }

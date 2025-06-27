@@ -5,5 +5,6 @@ export function setupAdminUserManagementRoutes(adminController: AdminUserManagem
   const router = Router();
   router.get('/getusers', adminController.getAllUsers.bind(adminController));
   router.patch('/:userId/suspend',adminController.suspendUser.bind(adminController))
+  router.get('/usercount',adminController.userCountAndSuspendCount.bind(adminController))
   return router;
 }

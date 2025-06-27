@@ -4,6 +4,7 @@ import { adminBaseQueryWithReauth } from "./adminBaseQuery";
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: adminBaseQueryWithReauth,
+  tagTypes: ['UserCounts'],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (loginData) => ({
@@ -53,7 +54,16 @@ export const adminApi = createApi({
         url:`/admin/${userId}/suspend`,
         method:"PATCH",
         body:{status}
-      })
+      }),
+      invalidatesTags: ['UserCounts'], 
+    }),
+
+    userCounts:builder.query({
+      query:()=>({
+        url:'/admin/usercount',
+        method:'GET',
+      }),
+      providesTags: ['UserCounts'],
     })
   }),
 });
@@ -61,5 +71,6 @@ export const adminApi = createApi({
 export const {
   useLoginMutation,
   useGetAllUsersQuery,
-  useSuspendUserMutation
+  useSuspendUserMutation,
+  useUserCountsQuery
 } = adminApi;

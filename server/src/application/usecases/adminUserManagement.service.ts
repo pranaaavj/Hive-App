@@ -12,4 +12,7 @@ export class AdminUserManagementService{
     async suspendUser(userId:string,status:boolean):Promise<UserManagement|null>{
         return this.adminUserManagementRepository.suspendUser(userId,status)
     }
+    async userCountAndSuspendCount():Promise<{userCount:number,suspendedUser:number}>{
+        return this.adminUserManagementRepository.userCountAndSuspendCount()
+    }
 }

@@ -31,4 +31,17 @@ export class AdminUserManagementController{
         }
     }
 
+    async userCountAndSuspendCount(req:Request,res:Response,next:NextFunction):Promise<void>{
+        try {
+            const {userCount,suspendedUser} = await this.adminUserManagementService.userCountAndSuspendCount()
+            // if(!userCount && !suspendedUser){
+            //      throw new ApiError('no users fount and suspended user found',400)
+            // }
+            res.status(200).json({success:true,message:'total users and suspended user fetched',userCount,suspendedUser})
+        } catch (error) {
+            next(error)
+        }
+    }
+   
+
 }

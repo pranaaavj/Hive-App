@@ -32,7 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, Ban, Shield, Mail } from "lucide-react";
-import { useGetAllUsersQuery, useSuspendUserMutation } from "@/services/adminApi";
+import { useGetAllUsersQuery, useSuspendUserMutation, useUserCountsQuery } from "@/services/adminApi";
 
 const usersData = [
   {
@@ -86,11 +86,14 @@ export const UsersSection = () => {
   const [users, setUsers] = useState(usersData);
   const{data:getAllUsers,isLoading,refetch} = useGetAllUsersQuery(undefined)
   const [suspendUser] = useSuspendUserMutation()
-  console.log(getAllUsers,'all the users ')
+  // console.log(getAllUsers,'all the users ')
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+   const {data}= useUserCountsQuery(undefined)
+  console.log(data,'daataaa')
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -106,7 +109,7 @@ export const UsersSection = () => {
   };
 
   const handleSuspendUser = async(userId:string,status:boolean)=>{
-    await suspendUser({userId,status:!status})
+    await suspendUser({userId,status:!status}).unwrap()
     await refetch()
   }
   return (
@@ -123,13 +126,13 @@ export const UsersSection = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">18,543</div>
+            <div className="text-2xl font-bold text-green-600">{data?.userCount ?? 0}</div>
             <div className="text-sm text-gray-600">Active Users</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">142</div>
+            <div className="text-2xl font-bold text-red-600">{data?.suspendedUser?? 0}</div>
             <div className="text-sm text-gray-600">Suspended</div>
           </CardContent>
         </Card>
