@@ -15,7 +15,7 @@ export class ChatService {
     
   ) {}
 
-  async sendMessage(senderId: string, receiverid: string, text: string): Promise<AddChat> {
+  async sendMessage(senderId: string, receiverid: string, text: string, type: string): Promise<AddChat> {
     let chat = await this.chatRepository.findChatByUsers(senderId, receiverid);
 
     if (!chat) {
@@ -26,6 +26,7 @@ export class ChatService {
         chat._id.toString(),
         senderId,
         text,
+        type
       );
 
       const populatedMessage = await MessageModel.findById(message._id)

@@ -107,6 +107,12 @@ export const authApi = createApi({
         url: `/profile/followers?userId=${userId}`,
         method: "GET"
       })
+    }),
+    usernameAndProfile: builder.query({
+      query: () => ({
+        url: "/profile/username-profile",
+        method: "GET"
+      })
     })    
   }),
 });
@@ -126,5 +132,6 @@ export const {
   useUnfollowUserMutation,
   useUpadateProfileMutation,
   useGetFollowingUsersQuery,
-  useGetFollowersQuery  
+  useGetFollowersQuery,
+  useUsernameAndProfileQuery  
 } = authApi;

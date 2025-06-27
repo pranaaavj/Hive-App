@@ -12,11 +12,11 @@ export class ChatController {
       // const userId = req.user?.userId;
       // if (!userId) throw new ApiError('not authorized user', 401);
 
-      const { senderId, receiverId, text } = req.body;
+      const { senderId, receiverId, text, type } = req.body;
       if (!senderId || !receiverId || !text) {
         throw new ApiError('missing required fields', 401);
       }
-      const result = await this.chatService.sendMessage(senderId, receiverId, text);  
+      const result = await this.chatService.sendMessage(senderId, receiverId, text, type);  
   
       res.status(201).json(result);
     } catch (error) {

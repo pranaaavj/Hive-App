@@ -151,6 +151,7 @@ export function setupWebSocket(httpServer: any): Server {
         senderId: messageData.senderId,
         profilePic: messageData.profilePic,
         text: messageData.text,
+        type:messageData.type,
         createdAt: messageData.createdAt,
       });
 

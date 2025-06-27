@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 
 export function RightSidebar() {
   return (
-    <div className="space-y-4">
-      <Card className="shadow-sm border-amber-100">
+    <div className="space-y-4 px-5 pt-5">
+      {/* <Card className="shadow-sm border-amber-100">
         <CardHeader className="pb-2 pt-3 px-3">
           <h3 className="font-semibold text-base">Your Profile</h3>
         </CardHeader>
@@ -37,7 +37,7 @@ export function RightSidebar() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       <Card className="shadow-sm border-amber-100">
         <CardHeader className="pb-2 pt-3 px-3">

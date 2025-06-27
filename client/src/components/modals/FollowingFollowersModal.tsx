@@ -8,6 +8,7 @@ import {
   useGetFollowingUsersQuery,
   useGetFollowersQuery,
 } from "@/services/authApi";
+import { useNavigate } from "react-router-dom";
 
 interface FollowingFollowersModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export function FollowingFollowersModal({
 }: FollowingFollowersModalProps) {
   const title = type === "followers" ? "followers" : "following";
   const [users, setUsers] = useState([])
+  const navigate = useNavigate()
   const { data: followers, isLoading: followersLoading } = useGetFollowersQuery(
     userId,
     { skip: type != "followers" }
@@ -81,7 +83,11 @@ export function FollowingFollowersModal({
               key={user?._id}
               className="flex items-center justify-between"
             >
-              <div className="flex items-center space-x-3">
+              <div onClick={() => {
+                onClose()
+                navigate(`/profile/${user._id}`)}}
+                
+                className="flex items-center space-x-3">
                 <Avatar>
                   <AvatarImage
                     src={user?.profilePicture || "/placeholder.svg"}

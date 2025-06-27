@@ -178,4 +178,20 @@ export class ProfileControler {
 
     
   };
+  usernameAndProfile = async(req: RequestWithUser, res: Response, next: NextFunction) : Promise<void> => {
+    try {
+      const userId = req.user?.userId
+    if(!userId) {
+      throw new ApiError("user not authorised", 401)
+    }
+    const usernameProfile =  await this.profileService.usernameAndProfile(userId)
+
+    if(!usernameProfile) {
+      throw new ApiError("User not found", 404)
+    }
+    res.status(200).json(usernameProfile)
+    } catch (error) {
+      next(error)
+    }
+  }
 }

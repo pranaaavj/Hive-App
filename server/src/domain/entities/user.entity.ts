@@ -14,6 +14,11 @@ export interface IUser {
   updatedAt?: Date;
 }
 
+export interface UsernameProfile {
+  username: string,
+  profilePicture: string
+}
+
 export interface ProfileSummary {
   _id: string;
   username: string;
