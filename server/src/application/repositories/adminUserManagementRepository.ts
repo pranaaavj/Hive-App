@@ -1,12 +1,12 @@
 import {Types } from 'mongoose';
-import { UserModel, UserStatusEnum } from '../../infrastructure/model/user.model';
+import { UserModel} from '../../infrastructure/model/user.model';
 
 export interface UserManagement {
   _id: Types.ObjectId;
   username: string;
   email: string;
   profilePicture?: string;
-  status: UserStatusEnum;
+  status: boolean;
   postsCount: number;
   followers: number;
   createdAt: Date;
@@ -14,6 +14,7 @@ export interface UserManagement {
 
 export interface AdminUserManagementRepository {
   getAllUsers(): Promise<UserManagement[] | null>;
+  suspendUser(userId:string,status:boolean):Promise<UserManagement | null>
 }
 
 export class MongoAdminUserManagementRepository implements AdminUserManagementRepository {
@@ -35,5 +36,10 @@ export class MongoAdminUserManagementRepository implements AdminUserManagementRe
       followers: user.followers.length,
       createdAt: user.createdAt,
     }));
+  }
+
+  async suspendUser(userId: string,status:boolean): Promise<UserManagement | null> {
+    const result = await UserModel.findByIdAndUpdate(userId,{$set:{status:status}},{new:true})
+    return result as UserManagement|null
   }
 }

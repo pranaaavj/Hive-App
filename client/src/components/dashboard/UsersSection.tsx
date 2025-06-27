@@ -4,6 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+
+export interface UserManagement {
+  _id: string;
+  username: string;
+  email: string;
+  profilePicture: string;
+  postsCount: number;
+  status:boolean;
+  followers: number;
+  createdAt: string; // or `Date` if you parse it
+}
+
 import {
   Table,
   TableBody,
@@ -19,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, Ban, Shield, Mail } from "lucide-react";
+import { useGetAllUsersQuery, useSuspendUserMutation } from "@/services/adminApi";
 
 const usersData = [
   {
@@ -70,7 +84,9 @@ const usersData = [
 export const UsersSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState(usersData);
-
+  const{data:getAllUsers,isLoading,refetch} = useGetAllUsersQuery(undefined)
+  const [suspendUser] = useSuspendUserMutation()
+  console.log(getAllUsers,'all the users ')
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -89,6 +105,10 @@ export const UsersSection = () => {
     }
   };
 
+  const handleSuspendUser = async(userId:string,status:boolean)=>{
+    await suspendUser({userId,status:!status})
+    await refetch()
+  }
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -161,32 +181,32 @@ export const UsersSection = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                {getAllUsers?.allUsers?.map((user:UserManagement) => (
+                  <TableRow key={user._id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.avatar} />
-                          <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarImage src={user.profilePicture} />
+                          <AvatarFallback>{user.username.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2">
-                            <div className="font-medium">{user.name}</div>
-                            {user.verified && (
+                            <div className="font-medium">{user.username}</div>
+                            {/* {user.verified && (
                               <Shield className="h-4 w-4 text-blue-500" />
-                            )}
+                            )} */}
                           </div>
                           <div className="text-sm text-gray-500">{user.email}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(user.status)}>
-                        {user.status}
+                      <Badge className={user.status? 'bg-green-100 text-green-800':'bg-red-100 text-red-800'}>
+                        {user.status ? 'active':'suspended'}
                       </Badge>
                     </TableCell>
-                    <TableCell>{user.joinDate}</TableCell>
-                    <TableCell>{user.posts}</TableCell>
+                    <TableCell>{user.createdAt}</TableCell>
+                    <TableCell>{user.postsCount}</TableCell>
                     <TableCell>{user.followers.toLocaleString()}</TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -204,9 +224,9 @@ export const UsersSection = () => {
                             <Shield className="mr-2 h-4 w-4" />
                             Verify User
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem className="text-red-600" onClick={()=>handleSuspendUser(user._id,user.status)}>
                             <Ban className="mr-2 h-4 w-4" />
-                            Suspend User
+                            {user.status? "Block" : "Unblock"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

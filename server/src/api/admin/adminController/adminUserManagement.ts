@@ -10,11 +10,25 @@ export class AdminUserManagementController{
         try {
             const allUsers = await this.adminUserManagementService.getAllUsers()
             if(!allUsers){
-                console.log('failed to load users',allUsers)
+               throw new ApiError('failed to fetch all the users',400)
             }
             res.status(200).json({success:true,message:'users fetched',allUsers})
         } catch (error) {
             next(error)
         }
     }
+    async suspendUser(req:Request,res:Response,next:NextFunction):Promise<void>{
+        try {
+            const userId = req.params.userId
+            const {status} = req.body
+            const suspendedUser = await this.adminUserManagementService.suspendUser(userId,status)
+            if(!suspendedUser){
+                throw new ApiError('failed to fetch suspended user',400)
+            }
+            res.status(200).json({success:true,message:'successfully fetched suspended user'})
+        } catch (error) {
+            next(error);
+        }
+    }
+
 }

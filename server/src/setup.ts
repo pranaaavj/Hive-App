@@ -72,7 +72,7 @@ import { AdminUserManagementController } from "./api/admin/adminController/admin
     const adminUserManagementRepository = new MongoAdminUserManagementRepository()
     const adminUserManagementService = new AdminUserManagementService(adminUserManagementRepository)
     const adminUserManagementController = new AdminUserManagementController(adminUserManagementService)
-
+ 
 
     export {
         userController,

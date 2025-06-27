@@ -8,4 +8,8 @@ export class AdminUserManagementService{
     async getAllUsers():Promise<UserManagement[]|null>{
         return this.adminUserManagementRepository.getAllUsers()
     }
+
+    async suspendUser(userId:string,status:boolean):Promise<UserManagement|null>{
+        return this.adminUserManagementRepository.suspendUser(userId,status)
+    }
 }

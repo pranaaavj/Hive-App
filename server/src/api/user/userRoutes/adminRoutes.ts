@@ -12,6 +12,10 @@ export function setupAdminAuthRoutes(adminController: AdminController): Router {
   router.get('/verify-forgot-email/:token', adminController.forgotVerifyEmail.bind(adminController)); 
   router.post('/reset-password', adminController.resetPassword.bind(adminController)); 
   router.post('/logout', adminController.logout.bind(adminController))
+
+
+  //user management 
+  
   return router;
 
 }
