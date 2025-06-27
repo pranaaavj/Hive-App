@@ -25,3 +25,29 @@ console.log("File:", file)
         return null
       }
     }
+
+
+
+export const uploadAudioToCloudinary = async (audioBlob: Blob): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", audioBlob);
+  formData.append("upload_preset", import.meta.env.VITE_PRESET_NAME); 
+  formData.append("folder", "voice_messages");// your preset name
+
+  const response = await axios.post(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUD_NAME}/raw/upload`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
+
+
+  if (response.data.secure_url) {
+    return response.data.secure_url; // ✅ Cloudinary audio URL
+  } else {
+    throw new Error("Cloudinary upload failed");
+  }
+};
+

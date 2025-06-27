@@ -19,6 +19,7 @@ export function HomePage() {
     if (data) {
       const newPosts = data.posts.map(post => ({
         _id: post._id,
+        userId: post.userId,
         user: {
           username: post.user.username,
           profilePicture: post.user.profilePicture || "/placeholder.svg"

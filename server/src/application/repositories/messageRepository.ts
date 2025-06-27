@@ -3,7 +3,7 @@ import { RedisClient } from '../../infrastructure/cache/redis';
 import { IFormattedMessage, IMessage, MessageModel, PaginatedMessages } from '../../infrastructure/model/messageModel';
 
 export interface MessageRepository {
-  createMessage(chatId: string, senderId: string, text: string): Promise<IMessage>;
+  createMessage(chatId: string, senderId: string, text: string, type: string): Promise<IMessage>;
   findLastMessage(chatId: string): Promise<IMessage | null>;
   findMessagesByChatId(chatId: string, page: number, limit: number): Promise<PaginatedMessages>;
 }
@@ -14,11 +14,12 @@ export class MongoMessageRepository implements MessageRepository {
   constructor() {
     this.redis = new RedisClient();
   }
-  async createMessage(chatId: string, senderId: string, text: string): Promise<IMessage> {
+  async createMessage(chatId: string, senderId: string, text: string, type: string): Promise<IMessage> {
     return await MessageModel.create({
       chatId,
       sender: senderId,
       text,
+      type
     });
   }
   async findLastMessage(chatId: string): Promise<IMessage | null> {
@@ -46,6 +47,7 @@ export class MongoMessageRepository implements MessageRepository {
  
         text:msg.text,
         isSeen:msg.isSeen,
+        type: msg.type,
         createdAt: msg.createdAt!, 
       }))
 

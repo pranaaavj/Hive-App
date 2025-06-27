@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { ProfileSummary, User, } from '../../domain/entities/user.entity';
+import { ProfileSummary, User, UsernameProfile, } from '../../domain/entities/user.entity';
 import { UserModel } from '../../infrastructure/model/user.model';
 import { RedisClient } from '../../infrastructure/cache/redis';
 import { SearchUsers } from '../../domain/entities/profileEntity';
@@ -18,6 +18,7 @@ export interface ProfileRepository {
     isFollowing: boolean;
     isFollowed: boolean;
   }>;
+  usernameProfile(userId: string) : Promise<UsernameProfile | null>
 }
 
 export class MongoProfileRepository implements ProfileRepository {
@@ -200,5 +201,8 @@ export class MongoProfileRepository implements ProfileRepository {
     const isFollowed = userB.following.some((id) => id.equals(userAId));  // B ➝ A
   
     return { isFollowing, isFollowed };
+  }
+  async usernameProfile(userId: string): Promise<UsernameProfile | null> {
+    return await UserModel.findById(userId).select("username profilePicture")
   }
 }

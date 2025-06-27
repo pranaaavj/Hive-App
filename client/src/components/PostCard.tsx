@@ -10,6 +10,7 @@ import { useLikePostMutation,useUnlikePostMutation } from "@/services/postApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 import { CommentModal } from "./modals/CommentModal";
+import { useNavigate } from "react-router-dom";
 
 
 interface PostCardProps {
@@ -27,6 +28,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
   const [likePost] = useLikePostMutation();
   const [unlikePost] = useUnlikePostMutation();
   const[showComments,setShowComments] = useState(false)
+  const navigate = useNavigate()
 
    useEffect(() => {
     if (currentUserId) {
@@ -58,7 +60,7 @@ export function PostCard({ post /*, onLike, onSave, isLiked, isSaved*/ }: PostCa
   return (
     <Card className="max-w-[500px] mx-auto p-4 overflow-hidden  shadow-md bg-white">
       <CardHeader className="flex flex-row items-center justify-between py-2 px-3">
-        <div className="flex items-center gap-2">
+        <div onClick={() => navigate(`/profile/${post.userId}`)} className="flex items-center gap-2">
           <Avatar className="w-8 h-8 border-2 border-amber-200">
             <AvatarImage src={post.user.profilePicture || "/placeholder.svg"} alt={post.user.username} />
             <AvatarFallback>{post.user.username.substring(0, 2).toUpperCase()}</AvatarFallback>

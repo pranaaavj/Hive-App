@@ -21,10 +21,10 @@ export const chatApi = createApi({
       providesTags: ["Messages"],
     }),
     sendMessage: builder.mutation({
-      query: ({ senderId, receiverId, text }) => ({
+      query: ({ senderId, receiverId, text, type }) => ({
         url: `/messages/send-message`,
         method: "POST",
-        body: { senderId, receiverId, text },
+        body: { senderId, receiverId, text, type },
       }),
       invalidatesTags: ["Messages"],
     }),

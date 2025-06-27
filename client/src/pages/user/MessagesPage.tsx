@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,11 @@ import {
   MoreVertical,
   Search,
   ArrowLeft,
+  X,
 } from "lucide-react";
+import { AiOutlineAudio } from "react-icons/ai";
+import { MdDelete } from "react-icons/md";
+import { IoMdSend } from "react-icons/io";
 import { useGetChatsQuery } from "@/services/chatApi";
 import { ChatPreview } from "@/types/chat";
 import { useOnlineUsers } from "@/hooks/useOnlineUsers";
@@ -27,6 +31,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store/store";
 // ADDED: Import socket configuration
 import { socket } from "../../lib/socket";
+import { uploadAudioToCloudinary } from "@/utils/cloudinary";
 
 // TypeScript interfaces
 interface User {
@@ -48,6 +53,7 @@ interface ApiMessage {
   createdAt: string;
   profilePic: string;
   senderId?: string;
+  type: string;
 }
 
 interface Message {
@@ -72,6 +78,7 @@ interface SocketMessage {
   senderId: string;
   profilePic?: string;
   text: string;
+  type:string
   createdAt: string;
 }
 
@@ -89,13 +96,26 @@ export default function MessagesPage() {
 
   const { data: userChats, isLoading } = useGetChatsQuery(undefined);
   const { onlineUsers } = useOnlineUsers();
-  const [
-    getMessages,
-    { data: userMessages, isLoading: messagesLoading},
-  ] = useLazyGetMessagesQuery();
+  const [getMessages, { data: userMessages, isLoading: messagesLoading }] =
+    useLazyGetMessagesQuery();
   const currentUserId = useSelector((state: RootState) => state.user.user?.id);
   const [sendMessage] = useSendMessageMutation();
   const [isTyping, setIsTyping] = useState(false);
+
+  //Audio
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
+    null
+  );
+  const [audioChunks, setAudioChunks] = useState<BlobPart[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const isCancelledRef = useRef(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const waveformRef = useRef<NodeJS.Timeout | null>(null);
+  const [seconds, setSeconds] = useState(0);
+  const [waveformData, setWaveformData] = useState<number[]>(Array(15).fill(0));
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -146,6 +166,7 @@ export default function MessagesPage() {
           createdAt: data.createdAt,
           profilePic: data.profilePic || "/placeholder.svg",
           senderId: data.senderId,
+          type:data.type
         };
 
         setRealtimeMessages((prev) => [...prev, newRealtimeMessage]);
@@ -227,28 +248,32 @@ export default function MessagesPage() {
         createdAt: new Date().toISOString(),
         profilePic: currentUser?.profilePicture || "/placeholder.svg", // You might want to use current user's profile pic here
         senderId: currentUserId,
+        type:'message'
       };
 
       setRealtimeMessages((prev) => [...prev, tempMessage]);
       setNewMessage("");
-
+      
       // Auto-scroll immediately
       setTimeout(() => {
         scrollToBottom();
       }, 100);
-
+      
       try {
         await sendMessage({
           senderId: currentUserId,
           receiverId: selectedChat.otherUser._id,
           text: tempMessage.text,
+          type: "message",
         });
+        
 
         socket.emit("sendMessage", {
           chatId: selectedChat._id,
           senderId: currentUserId,
           profilePic: currentUser?.profilePicture || "/placeholder.svg",
           text: tempMessage.text,
+          type:tempMessage.type,
           createdAt: new Date().toISOString(),
         });
       } catch (error) {
@@ -258,6 +283,7 @@ export default function MessagesPage() {
           prev.filter((msg) => msg.messageId !== tempMessage.messageId)
         );
       }
+      
     }
   };
 
@@ -310,39 +336,75 @@ export default function MessagesPage() {
     };
   }, [socket, selectedChat]);
 
+  useEffect(() => {
+    if (!socket || !selectedChat || !currentUserId) return;
+    const markMessagesAsSeen = () => {
+      socket.emit("messageSeen", {
+        chatId: selectedChat._id,
+        receiverId: selectedChat.otherUser._id,
+      });
+    };
+    markMessagesAsSeen();
+  }, [selectedChat, realtimeMessages, currentUserId]);
 
-useEffect(()=>{
-  if(!socket || !selectedChat || !currentUserId) return
-  const markMessagesAsSeen = ()=>{
-    socket.emit('messageSeen',{
-      chatId:selectedChat._id,
-      receiverId:selectedChat.otherUser._id,
-    })
-  }
-  markMessagesAsSeen()
+  useEffect(() => {
+    const handleMessageSeen = ({
+      chatId,
+      seenBy,
+    }: {
+      chatId: string;
+      seenBy: string;
+    }) => {
+      if (selectedChat && chatId === selectedChat._id) {
+        setRealtimeMessages((prev) =>
+          prev.map((msg) =>
+            msg.senderId === currentUserId ? { ...msg, isSeen: true } : msg
+          )
+        );
+      }
+    };
 
-},[selectedChat,realtimeMessages,currentUserId])
+    socket.on("messageSeen", handleMessageSeen);
 
-useEffect(() => {
-  const handleMessageSeen = ({ chatId, seenBy }: { chatId: string; seenBy: string }) => {
-    if (selectedChat && chatId === selectedChat._id) {
-      setRealtimeMessages(prev =>
-        prev.map(msg =>
-          msg.senderId === currentUserId
-            ? { ...msg, isSeen: true }
-            : msg
-        )
-      );
+    return () => {
+      socket.off("messageSeen", handleMessageSeen);
+    };
+  }, [selectedChat, currentUserId]);
+
+  useEffect(() => {
+    if (isRecording) {
+      // Timer
+      intervalRef.current = setInterval(() => {
+        setSeconds((prev) => prev + 1);
+      }, 1000);
+
+      // Waveform animation
+      waveformRef.current = setInterval(() => {
+        setWaveformData(() =>
+          Array(15)
+            .fill(0)
+            .map(() => Math.random() * 100)
+        );
+      }, 150);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      if (waveformRef.current) {
+        clearInterval(waveformRef.current);
+      }
+      setWaveformData(Array(15).fill(0));
     }
-  };
 
-  socket.on('messageSeen', handleMessageSeen);
-
-  return () => {
-    socket.off('messageSeen', handleMessageSeen);
-  };
-}, [selectedChat, currentUserId]);
-
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      if (waveformRef.current) {
+        clearInterval(waveformRef.current);
+      }
+    };
+  }, [isRecording]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -388,6 +450,94 @@ useEffect(() => {
     });
 
     return groups;
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setStream(stream);
+
+      const recorder = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setStream(null);
+
+        if (isCancelledRef.current) {
+          setAudioBlob(null);
+          setAudioUrl(null);
+          return;
+        }
+
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setAudioBlob(blob);
+        const url = await uploadAudioToCloudinary(blob);
+        console.log(url);
+        setAudioUrl(url);
+
+        const tempMessage: ApiMessage = {
+          messageId: `temp-sent-${Date.now()}`,
+          text: url,
+          isSeen: false,
+          createdAt: new Date().toISOString(),
+          profilePic: currentUser?.profilePicture || "/placeholder.svg", // You might want to use current user's profile pic here
+          senderId: currentUserId,
+          type:'audio'
+        };
+
+        setRealtimeMessages((prev)=> [...prev,tempMessage])
+        
+        await sendMessage({
+          senderId: currentUserId,
+          receiverId: selectedChat?.otherUser._id,
+          text: url,
+          type: "audio",
+        });
+        if(selectedChat){
+
+          socket.emit("sendMessage", {
+            chatId: selectedChat?._id,
+            senderId: currentUserId,
+            profilePic: currentUser?.profilePicture || "/placeholder.svg",
+            text: url,
+            type:'audio',
+            createdAt: new Date().toISOString(),
+          });
+        }
+        setStream(null);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setAudioChunks(chunks);
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Microphone access denied or not available", error);
+    }
+  };
+  const handleSendRecording = async () => {
+    isCancelledRef.current = false;
+    mediaRecorder?.stop();
+    setIsRecording(false);
+    setSeconds(0);
+  };
+
+  const cancelRecording = () => {
+    isCancelledRef.current = true;
+    mediaRecorder?.stop();
+    setIsRecording(false);
+    setSeconds(0);
+  };
+
+  const formatRecordTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -580,7 +730,16 @@ useEffect(() => {
                                           alt="Profile"
                                         />
                                       </div>
-                                      <p className="text-sm">{message.text}</p>
+                                      {message?.type == "audio" ? (
+                                        <audio
+                                          controls
+                                          src={message.text}
+                                        ></audio>
+                                      ) : (
+                                        <p className="text-sm">
+                                          {message.text}
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="flex items-center justify-between mt-1">
                                       <p
@@ -643,21 +802,76 @@ useEffect(() => {
               )}
 
               <div className="p-4 border-t bg-white">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleSendMessage}
-                    size="sm"
-                    disabled={!newMessage.trim()}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                <div className="flex justify-between items-center space-x-2">
+                  {!isRecording ? (
+                    <Input
+                      placeholder="Type a message..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleSendMessage()
+                      }
+                      className="flex-1"
+                    />
+                  ) : (
+                    <div className="flex space-x-5 justify-items-center p-2 bg-green-50 border-2 border-green-200 rounded-lg  ">
+                      {/* Recording Header */}
+                      <div className="flex space-x-3 items-center justify-between`">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                          <span className="text-sm font-medium text-gray-700">
+                            Recording
+                          </span>
+                        </div>
+                        <div className="text-sm font-mono font-semibold text-gray-800">
+                          {formatRecordTime(seconds)}
+                        </div>
+                      </div>
+
+                      {/* Waveform in Input */}
+                      <div className="flex items-center justify-center space-x-1">
+                        {waveformData.map((height, index) => (
+                          <div
+                            key={index}
+                            className="w-1 bg-green-500 rounded-full transition-all duration-150"
+                            style={{
+                              height: `${Math.max(6, (height / 100) * 20)}px`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-3">
+                    {isRecording ? (
+                      <Button
+                        onClick={handleSendRecording}
+                        className="bg-green-800"
+                        size="sm"
+                      >
+                        <IoMdSend />
+                      </Button>
+                    ) : (
+                      <Button disabled={newMessage.length > 0} size="sm" onClick={startRecording}>
+                        <AiOutlineAudio />
+                      </Button>
+                    )}
+                    {isRecording ? (
+                      <Button size="sm" onClick={cancelRecording}>
+                        <MdDelete color="red" />
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleSendMessage}
+                        size="sm"
+                        disabled={!newMessage.trim()}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+               
                 </div>
               </div>
             </div>

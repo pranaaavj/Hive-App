@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { SearchUsers } from '../../domain/entities/profileEntity';
-import { ProfileSummary } from '../../domain/entities/user.entity';
+import { ProfileSummary, UsernameProfile } from '../../domain/entities/user.entity';
 import { IUserModel } from '../../infrastructure/model/user.model';
 import { ApiError } from '../../utils/apiError';
 import { createAndEmitNotification } from '../../utils/sendNotification';
@@ -100,5 +100,10 @@ export class ProfileService {
     } catch (error: any) {
       throw new Error(`Failed to fetch followed users: ${error.message || error}`);
     }
+  }
+  async usernameAndProfile(userId: string) : Promise<UsernameProfile | null> {
+    const usernameProfile = this.profileRepository.usernameProfile(userId)
+
+    return usernameProfile
   }
 }

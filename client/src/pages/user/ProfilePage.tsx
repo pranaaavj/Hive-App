@@ -53,24 +53,6 @@ export type Post = {
   likeCount: number;
   commentCount: number;
 };
-
-// Mock data for demonstration
-const userData: User = {
-  id: "1",
-  name: "Alex Johnson",
-  username: "alexjohnson",
-  bio: "Digital creator | Photographer | Travel enthusiast | Sharing my journey through photos and stories",
-  location: "San Francisco, CA",
-  website: "alexjohnson.design",
-  joinDate: "January 2020",
-  following: 542,
-  followers: 8943,
-  posts: 127,
-  profileImage: "/placeholder.svg?height=200&width=200",
-  coverImage: "/placeholder.svg?height=400&width=1200",
-  isVerified: true,
-};
-
 const postsData = [
   {
     id: "1",
@@ -404,7 +386,7 @@ export function ProfilePage() {
 
       {/* Content Tabs */}
       <Tabs defaultValue="posts" className="px-4 sm:px-6 lg:px-8">
-        <TabsList className="grid grid-cols-4 w-full max-w-md mx-auto bg-violet-50 rounded-lg overflow-hidden">
+        <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto bg-violet-50 rounded-lg overflow-hidden">
           <TabsTrigger
             value="posts"
             className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
@@ -412,23 +394,12 @@ export function ProfilePage() {
             Posts
           </TabsTrigger>
           <TabsTrigger
-            value="media"
+            value="saved"
             className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
           >
-            Media
+            Saved
           </TabsTrigger>
-          <TabsTrigger
-            value="likes"
-            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
-          >
-            Likes
-          </TabsTrigger>
-          <TabsTrigger
-            value="about"
-            className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
-          >
-            About
-          </TabsTrigger>
+         
         </TabsList>
 
         <TabsContent value="posts" className="mt-6">
@@ -473,7 +444,7 @@ export function ProfilePage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="media" className="mt-6">
+        <TabsContent value="saved" className="mt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {postsData
               .filter((post) => post.image)
@@ -504,70 +475,6 @@ export function ProfilePage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="likes">
-          <div className="py-12 text-center text-muted-foreground">
-            <p>
-              Posts liked by {profile?.username || userData.name} will appear
-              here
-            </p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="about">
-          <div className="py-6 space-y-6 max-w-2xl mx-auto">
-            <Card className="shadow-sm">
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg text-violet-700 mb-2">
-                  Bio
-                </h3>
-                <p>{userData.bio}</p>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="shadow-sm">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-violet-700 mb-2">
-                    Location
-                  </h3>
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 mr-2 text-violet-500" />
-                    <p>{userData.location}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-violet-700 mb-2">
-                    Website
-                  </h3>
-                  <a
-                    href={`https://${userData.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center text-violet-500 hover:text-violet-700 transition-colors"
-                  >
-                    <LinkIcon className="h-5 w-5 mr-2" />
-                    {userData.website}
-                  </a>
-                </CardContent>
-              </Card>
-
-              <Card className="shadow-sm">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg text-violet-700 mb-2">
-                    Joined
-                  </h3>
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 mr-2 text-violet-500" />
-                    <p>{userData.joinDate}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
       </Tabs>
       {userId && modalOpen && (
         <FollowingFollowersModal
