@@ -130,10 +130,9 @@ export function setupWebSocket(httpServer: any): Server {
         console.log(`✅ Marked ${result.modifiedCount} messages as seen`);
         
         // Broadcast to all users in the chat that messages have been seen
-        io?.to(chatId).emit('messageSeen', {
-          chatId,
-          seenBy: receiverId
-        });
+        if (result.modifiedCount > 0) {
+  io?.to(chatId).emit('messageSeen', { chatId, seenBy: receiverId });
+}
 
       } catch (error) {
          console.error('❌ Error marking messages as seen:', error);

@@ -723,10 +723,10 @@ export default function MessagesPage() {
                                     }`}
                                   >
                                     <div className="flex gap-2">
-                                      <div className="h-7 w-7">
+                                      <div className={`h-7 w-7 `}>
                                         <img
-                                          className="object-contain"
-                                          src={message?.profilePic}
+                                          className={`object-contain ${message?.profilePic ? "" : "rounded-2xl"}`}
+                                          src={message?.profilePic ? message?.profilePic : "https://imgs.search.brave.com/Rz6Zm1M0FFOnsFikSiYXilBeSRd6Gs795ZRe267PjKk/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/c2h1dHRlcnN0b2Nr/LmNvbS9pbWFnZS12/ZWN0b3IvcHJvZmls/ZS1wbGFjZWhvbGRl/ci1pbWFnZS1ncmF5/LXNpbGhvdWV0dGUt/MjYwbnctMTE5MDM4/NjMyNC5qcGc"}
                                           alt="Profile"
                                         />
                                       </div>
