@@ -56,7 +56,7 @@ export class MongoCommentRepository implements CommentRepository {
       .populate('userId', '_id username profilePicture');
 
     if (this.redis.client) {
-      await this.redis.setEx(cacheKey, JSON.stringify(comments), 60);
+      await this.redis.setEx(cacheKey, JSON.stringify(comments), 2);
     }
     return comments;
   }
@@ -78,7 +78,7 @@ export class MongoCommentRepository implements CommentRepository {
       .populate('userId', 'username profilePicture')
       .lean()
     if (this.redis.client) {
-      await this.redis.setEx(cacheKey, JSON.stringify(replies), 60);
+      await this.redis.setEx(cacheKey, JSON.stringify(replies), 2);
     }
     return replies;
   }

@@ -6,6 +6,7 @@ export interface    IMessage extends Document {
     sender: Types.ObjectId;
     text: string;
     isSeen: boolean;
+    type: "message" | "audio"
     createdAt?: Date;
     updatedAt?: Date;
   }
@@ -27,6 +28,8 @@ export interface    IMessage extends Document {
   senderId: Types.ObjectId,
   text: string;
   isSeen: boolean;
+  type: string,
+  username?: {username: string},
   profilePic?: {profilePicture: string},
   createdAt: Date;
 }
@@ -57,6 +60,11 @@ const messageSchema = new Schema<IMessage> (
         isSeen: {
             type: Boolean,
             default: false
+        },
+        type: {
+            type: String,
+            enum: ['audio', 'message'],
+            required: true
         }
     }, {timestamps: true}
 )

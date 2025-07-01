@@ -1,8 +1,9 @@
-import { IPost,Post} from '../../domain/entities/postEntity';
+import { IPost, Post } from '../../domain/entities/postEntity';
 import { PostRepository } from '../repositories/postRepository';
 import { ApiError } from '../../utils/apiError';
 import { IPostModel } from '../../infrastructure/model/postModel';
-
+import { createAndEmitNotification } from '../../utils/sendNotification';
+import { Types } from 'mongoose';
 
 export class PostService {
   constructor(private postRepository: PostRepository) {}
@@ -30,7 +31,7 @@ export class PostService {
     }
   }
 
-  async getAllPosts(userId:string): Promise<IPostModel[]> {
+  async getAllPosts(userId: string): Promise<IPostModel[]> {
     try {
       return await this.postRepository.findAll(userId);
     } catch (error) {
@@ -77,6 +78,23 @@ export class PostService {
       if (!post) {
         throw new ApiError('Post not found or already liked', 400);
       }
+
+      const postAndUser = await this.postRepository.getUserByPost(postId)
+
+      if(postAndUser?.userId.toString() !== userId.toString()) {
+
+        await createAndEmitNotification({
+          userId: new Types.ObjectId(postAndUser?.userId),
+          fromUser: new Types.ObjectId(userId),
+          type: 'like',
+          postId: new Types.ObjectId(postId),
+          message: 'liked your post',
+          postImage: postAndUser?.imageUrls?.[0]
+        });
+      }
+
+
+
       return post;
     } catch (error) {
       if (error instanceof ApiError) throw error;

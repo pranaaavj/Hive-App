@@ -24,6 +24,7 @@ export interface PostsResponse {
 
 export interface Post {
   _id: string;
+  userId:string,
   user: {
     username: string;
     profilePicture: string;

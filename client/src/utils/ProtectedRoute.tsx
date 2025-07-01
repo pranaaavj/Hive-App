@@ -1,21 +1,21 @@
-import { ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// src/utils/ProtectedRoutes.tsx
+import { ReactNode } from "react";
+import { Navigate, Outlet } from "react-router-dom";
 
-interface ProtectedRouteProps {
-    children: ReactNode
+interface GuardProps {
+  children?: ReactNode;           // Optional, lets you nest layouts
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-    const navigate = useNavigate();
-  
-    useEffect(() => {
-      const accessToken = localStorage.getItem("accessToken");
-  
-      if (!accessToken) {
-        navigate("/login");
-      }
-    }, [navigate]);
-  
-    return <>{children}</>;
-  };
-  
+/* ---------- USER ---------- */
+export const UserProtectedRoute = ({ children }: GuardProps) => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return <Navigate to="/login" replace />;
+  return children ? <>{children}</> : <Outlet />;
+};
+
+/* ---------- ADMIN ---------- */
+export const AdminProtectedRoute = ({ children }: GuardProps) => {
+  const adminToken = localStorage.getItem("adminAccessToken");
+  if (!adminToken) return <Navigate to="/adminlogin" replace />;
+  return children ? <>{children}</> : <Outlet />;
+};

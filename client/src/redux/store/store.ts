@@ -6,7 +6,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { postApi } from '@/services/postApi';
 import { commentApi } from '@/services/commentApi';
 import { chatApi } from '@/services/chatApi';
-
+import adminReducer from '../slices/adminSlice'
+import { adminApi } from '@/services/adminApi';
 // Persist configuration
 const persistConfig = {
   key: 'user',
@@ -14,7 +15,14 @@ const persistConfig = {
   whitelist: ['user'], // Only persist the 'user' field
 };
 
+const persistAdminConfig = {
+  key: 'admin',
+  storage,
+  whitelist: ['admin'], // Only persist the 'user' field
+};
+
 const persistedUserReducer = persistReducer(persistConfig, userReducer);
+const persistAdminReducer = persistReducer(persistAdminConfig,adminReducer)
 
 export const store = configureStore({
   reducer: {
@@ -22,12 +30,14 @@ export const store = configureStore({
     [postApi.reducerPath]:postApi.reducer,
     [commentApi.reducerPath]:commentApi.reducer,
     [chatApi.reducerPath] : chatApi.reducer,
-    user: persistedUserReducer, // Use the persisted version
+    [adminApi.reducerPath]:adminApi.reducer,
+    user: persistedUserReducer, 
+    admin:persistAdminReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false, // Disable serializable check for redux-persist
-    }).concat(authApi.middleware,postApi.middleware,commentApi.middleware, chatApi.middleware),
+    }).concat(authApi.middleware,postApi.middleware,commentApi.middleware, chatApi.middleware,adminApi.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

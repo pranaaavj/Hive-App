@@ -19,11 +19,27 @@ import { ChatService } from "./application/usecases/chatService";
 import { MongoMessageRepository } from "./application/repositories/messageRepository";
 import { ChatController } from "./api/user/userControllers/chatController";
 
+import { MongoNotificationRepository } from "./application/repositories/notificationRepository";
+import { NotificationService } from "./application/usecases/notificationService";
+import { NotificationController } from "./api/user/userControllers/notificationController";
+
+import { MongoAdminRepository } from "./application/repositories/admin.repository";
+import { AdminService } from "./application/usecases/admin.service";
+import { AdminController } from "./api/admin/adminController/adminAuthController";
+import { MongoAdminUserManagementRepository } from "./application/repositories/adminUserManagementRepository";
+import { AdminUserManagementService } from "./application/usecases/adminUserManagement.service";
+import { AdminUserManagementController } from "./api/admin/adminController/adminUserManagement";
+
+
 
 
     const userRepository = new MongoUserRepository()
     const userService = new UserService(userRepository)
     const userController = new UserController(userService)
+
+    const adminRepository = new MongoAdminRepository()
+    const adminService = new AdminService(adminRepository)
+    const adminController = new AdminController(adminService)
 
     const postRepository = new MongoPostRepository()
     const postService = new PostService(postRepository)
@@ -49,8 +65,14 @@ import { ChatController } from "./api/user/userControllers/chatController";
     const chatService = new ChatService(chatRepository,messageRepository,userRepository)
     const chatController = new ChatController(chatService)
 
+    const notificationRepository = new MongoNotificationRepository()
+    const notificationService = new NotificationService(notificationRepository)
+    const notificationController = new NotificationController(notificationService)
 
-
+    const adminUserManagementRepository = new MongoAdminUserManagementRepository()
+    const adminUserManagementService = new AdminUserManagementService(adminUserManagementRepository)
+    const adminUserManagementController = new AdminUserManagementController(adminUserManagementService)
+ 
 
     export {
         userController,
@@ -58,5 +80,8 @@ import { ChatController } from "./api/user/userControllers/chatController";
         commentController,
         profileController,
         homeController,
-        chatController
+        chatController,
+        notificationController,
+        adminController,
+        adminUserManagementController
     }

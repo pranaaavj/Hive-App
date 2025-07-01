@@ -7,11 +7,17 @@ export interface IUser {
   password: string;
   role: string;
   isVerified: boolean;
+   profilePicture?: string; 
   resetPasswordToken?: string;
   isDeleted: boolean;
   isOnline: boolean,
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface UsernameProfile {
+  username: string,
+  profilePicture: string
 }
 
 export interface ProfileSummary {
@@ -29,7 +35,6 @@ export interface ProfileSummary {
   createdAt: Date;
   updatedAt: Date;
 }
-
 
 export class User {
   constructor(

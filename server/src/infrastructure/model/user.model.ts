@@ -7,14 +7,15 @@ export interface IUserModel extends Document {
   password: string;
   role: string;
   isVerified: boolean;
-  resetPasswordToken?: string,
-  profilePicture?: string,
-  bio?: string,
+  resetPasswordToken?: string;
+  profilePicture?: string;
+  bio?: string;
   postsCount: number;
   followers: Types.ObjectId[];
   following: Types.ObjectId[];
-  isOnline: boolean,
-  lastActive?: Date
+  isOnline: boolean;
+  status: boolean;
+  lastActive?: Date;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -25,20 +26,21 @@ const userSchema = new Schema<IUserModel>(
   {
     username: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    password: { type: String, required: true, },
+    password: { type: String, required: true },
     role: { type: String, default: 'user' },
     isVerified: { type: Boolean, default: false },
     resetPasswordToken: { type: String },
     isDeleted: { type: Boolean, default: false },
-    profilePicture: {type: String, default: ""},
-    bio: {type: String, default: ""},
-    postsCount: {type: Number, default: 0},
-    followers: [{type: Schema.Types.ObjectId, ref: "User", default: []}],
-    following: [{type: Schema.Types.ObjectId, ref: "User", default: []}],
-    isOnline: {type: Boolean, default: false},
-    lastActive:{type: Date}
+    profilePicture: { type: String, default: '' },
+    bio: { type: String, default: '' },
+    status: { type: Boolean, default: true},
+    postsCount: { type: Number, default: 0 },
+    followers: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
+    following: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
+    isOnline: { type: Boolean, default: false },
+    lastActive: { type: Date },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre('save', async function (next) {

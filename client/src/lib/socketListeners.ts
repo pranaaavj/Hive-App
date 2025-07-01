@@ -3,7 +3,7 @@ import { socket } from './socket';
 import { store } from '@/redux/store/store';
 import { postApi } from '@/services/postApi';
 
-export const setupPostSocketListeners = () => {
+export const  setupPostSocketListeners = () => {
   socket.on('postLiked', ({ postId, likeCount, likedUserId }) => {
     store.dispatch(
       postApi.util.updateQueryData('getHomeFeed', { page: 1, limit: 10 }, (draft) => {

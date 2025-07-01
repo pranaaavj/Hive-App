@@ -1,45 +1,46 @@
 import { Server } from 'socket.io';
 import { CommentModel } from '../model/commentModel';
 import { UserModel } from '../model/user.model';
+import { MessageModel } from '../model/messageModel';
 
 let io: Server | null = null;
 
-const onlineUsers = new Map<string, string>()
+export const onlineUsers = new Map<string, string>()
+
 
 function setupChangeStream() {
   const changeStream = CommentModel.watch(
     [
-      { 
+      {
         $match: {
           $or: [
             { operationType: 'insert' },
-            { 
+            {
               operationType: 'update',
-              'updateDescription.updatedFields.isDeleted': true
+              'updateDescription.updatedFields.isDeleted': true,
             },
-            { operationType: 'delete' } 
-          ]
-        } 
-      }
+            { operationType: 'delete' },
+          ],
+        },
+      },
     ],
-    { fullDocument: 'updateLookup' }
+    { fullDocument: 'updateLookup' },
   );
 
   changeStream.on('change', async (change) => {
-    const roomId = change.fullDocument?.postId?.toString() || 
-                  change.documentKey?.postId?.toString();
+    const roomId =
+      change.fullDocument?.postId?.toString() || change.documentKey?.postId?.toString();
 
     if (!roomId) return;
 
-    
     if (change.operationType === 'insert') {
       const comment = change.fullDocument;
       const populatedComment = await CommentModel.findById(comment._id)
         .populate('userId', 'username profilePicture')
         .lean();
-      
+
       if (!populatedComment) return;
-      
+
       if (populatedComment.parentCommentId) {
         io?.to(roomId).emit('newReply', populatedComment);
       } else {
@@ -48,7 +49,7 @@ function setupChangeStream() {
     }
     // Handle soft deletes
     else if (
-      change.operationType === 'update' && 
+      change.operationType === 'update' &&
       change.updateDescription?.updatedFields?.isDeleted
     ) {
       io?.to(roomId).emit('commentSoftDeleted', {
@@ -91,44 +92,83 @@ export function setupWebSocket(httpServer: any): Server {
       console.log(`📤 Socket ${socket.id} left room: ${postId}`);
     });
 
-    //chat socket 
-    socket.on("joinChat", (chatId: string) => {
-      socket.join(chatId)
+    //chat socket
+    socket.on('joinChat', (chatId: string) => {
+      socket.join(chatId);
       console.log(`💬 Socket ${socket.id} joined chat: ${chatId}`);
-    })
-    
-    socket.on("leaveChat", (chatId: string) => {
-      socket.leave(chatId)
-      console.log(`💬 Socket ${socket.id} left chat: ${chatId}`);
-    })
+    });
 
-    // ADDED: Handle message sending through socket
+    socket.on('leaveChat', (chatId: string) => {
+      socket.leave(chatId);
+      console.log(`💬 Socket ${socket.id} left chat: ${chatId}`);
+    });
+
+    /// for showing the typing
+    socket.on('typing', ({ chatId, senderId }) => {
+      socket.broadcast.to(chatId).emit('userTyping', { chatId, senderId });
+    });
+
+
+    socket.on('stopTyping', ({ chatId, senderId }) => {
+      socket.broadcast.to(chatId).emit('userStoppedTyping', { chatId, senderId });
+    });
+
+    ///for message seen - UPDATED with better error handling and logging
+    socket.on('messageSeen', async({chatId, receiverId}) => {
+      try {
+        console.log(`👁️ Marking messages as seen in chat: ${chatId} by user: ${receiverId}`);
+        
+        const result = await MessageModel.updateMany(
+          {
+            chatId,
+            sender: { $ne: receiverId },
+            isSeen: false
+          },
+          { $set: { isSeen: true } }
+        );
+
+        console.log(`✅ Marked ${result.modifiedCount} messages as seen`);
+        
+        // Broadcast to all users in the chat that messages have been seen
+        if (result.modifiedCount > 0) {
+  io?.to(chatId).emit('messageSeen', { chatId, seenBy: receiverId });
+}
+
+      } catch (error) {
+         console.error('❌ Error marking messages as seen:', error);
+         socket.emit('error', 'Failed to mark messages as seen');
+      }
+    });
+
+    // Handle message sending through socket
     socket.on('sendMessage', (messageData) => {
       console.log('📤 Message received from client:', messageData);
-      
+
       // Broadcast the message to everyone in the chat EXCEPT the sender
       socket.broadcast.to(messageData.chatId).emit('receiveMessage', {
         chatId: messageData.chatId,
         senderId: messageData.senderId,
         profilePic: messageData.profilePic,
+        username: messageData.username,
         text: messageData.text,
+        type:messageData.type,
         createdAt: messageData.createdAt,
       });
-      
+
       console.log(`📤 Message broadcasted to chat: ${messageData.chatId}`);
     });
 
-    //for use online status
+    //for user online status
     socket.on('userConnected', async (userId: string) => {
       console.log(`🟢 User Connected ID: ${userId}`);
       onlineUsers.set(userId, socket.id);
       await UserModel.findByIdAndUpdate(userId, { isOnline: true });
-    
+
       const allOnline = Array.from(onlineUsers.keys());
       console.log(`📡 Emitting onlineUsers to ${userId}`, allOnline);
-    
+
       socket.emit('onlineUsers', allOnline);
-      console.log("all online user are", allOnline)
+      console.log('all online user are', allOnline);
       io?.emit('userOnline', userId);
     });
 
@@ -137,9 +177,7 @@ export function setupWebSocket(httpServer: any): Server {
     });
 
     socket.on('disconnect', async () => {
-      const userId = [...onlineUsers.entries()].find(
-        ([, sid]) => sid === socket.id
-      )?.[0];
+      const userId = [...onlineUsers.entries()].find(([, sid]) => sid === socket.id)?.[0];
 
       if (userId) {
         onlineUsers.delete(userId);
@@ -149,7 +187,7 @@ export function setupWebSocket(httpServer: any): Server {
         });
 
         console.log(`🔴 User ${userId} is now offline`);
-        io?.emit('userOffline', userId); // Optional broadcast
+        io?.emit('userOffline', userId);
       }
 
       console.log(`❎ Client disconnected: ${socket.id}`);
@@ -169,10 +207,10 @@ export function getIO(): Server {
   return io;
 }
 
-// ADDED: Helper function to emit messages from API routes (if needed)
+// Helper function to emit messages from API routes (if needed)
 export function broadcastMessage(chatId: string, messageData: any, senderSocketId?: string) {
   if (!io) return;
-  
+
   if (senderSocketId) {
     // Exclude the sender's socket
     io.to(chatId).except(senderSocketId).emit('receiveMessage', messageData);
