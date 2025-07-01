@@ -29,6 +29,7 @@ export interface    IMessage extends Document {
   text: string;
   isSeen: boolean;
   type: string,
+  username?: {username: string},
   profilePic?: {profilePicture: string},
   createdAt: Date;
 }

@@ -109,8 +109,8 @@ export const authApi = createApi({
       })
     }),
     usernameAndProfile: builder.query({
-      query: () => ({
-        url: "/profile/username-profile",
+      query: (userId?: string) => ({
+        url: userId ? `/profile/username-profile/${userId}` : "/profile/username-profile",
         method: "GET"
       })
     })    

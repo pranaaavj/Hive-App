@@ -1,12 +1,10 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useRef } from "react"
 import { X, Upload, Send, ImageIcon, Video } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { useAddStoryMutation } from "@/services/postApi"
 import { updloadToCloudinary } from "@/utils/cloudinary"
 
@@ -33,13 +31,12 @@ export function AddStoryModal({ isOpen, setIsOpen }: AddStoryModalProps) {
 
   const handleModalClose = (open: boolean) => {
     if (!open) {
-      setPreviewUrl(null);
-      setSelectedFile(null);
-      setIsUploading(false);
+      setPreviewUrl(null)
+      setSelectedFile(null)
+      setIsUploading(false)
     }
-    setIsOpen(open);
-  };
-
+    setIsOpen(open)
+  }
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault()
@@ -91,14 +88,23 @@ export function AddStoryModal({ isOpen, setIsOpen }: AddStoryModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleModalClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-[90vw] max-w-[300px] lg:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Add to Your Story</DialogTitle>
+          <DialogTitle className="text-center text-base lg:text-lg">Add to Your Story</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 lg:space-y-4">
           {/* Preview Area */}
-          <div className="relative overflow-hidden bg-muted/30" style={{ aspectRatio: "9/16", height: "400px" }}>
+          <div
+            className="relative overflow-hidden bg-muted/30 rounded-lg mx-auto"
+            style={{
+              aspectRatio: "9/16",
+              height: "300px",
+              maxHeight: "400px",
+              width: "100%",
+              maxWidth: "200px",
+            }}
+          >
             {!previewUrl ? (
               /* Upload Area */
               <div
@@ -107,22 +113,22 @@ export function AddStoryModal({ isOpen, setIsOpen }: AddStoryModalProps) {
                 onDragOver={handleDragOver}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="p-4 rounded-full bg-primary/10">
-                    <Upload className="h-8 w-8 text-primary" />
+                <div className="flex flex-col items-center space-y-2 lg:space-y-4 p-3 lg:p-6">
+                  <div className="p-2 lg:p-4 rounded-full bg-primary/10">
+                    <Upload className="h-6 w-6 lg:h-8 lg:w-8 text-primary" />
                   </div>
-                  <div className="text-center space-y-2">
-                    <p className="text-sm font-medium">Drop your photo or video here</p>
-                    <p className="text-xs text-muted-foreground">or click to browse files</p>
+                  <div className="text-center space-y-1 lg:space-y-2">
+                    <p className="text-xs lg:text-sm font-medium">Drop your photo or video here</p>
+                    <p className="text-xs text-muted-foreground hidden lg:block">or click to browse files</p>
                   </div>
-                  <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                  <div className="flex items-center space-x-2 lg:space-x-4 text-xs text-muted-foreground">
                     <div className="flex items-center space-x-1">
-                      <ImageIcon className="h-3 w-3" />
-                      <span>Images</span>
+                      <ImageIcon className="h-3 w-3 lg:h-4 lg:w-4" />
+                      <span className="hidden lg:inline">Images</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Video className="h-3 w-3" />
-                      <span>Videos</span>
+                      <Video className="h-3 w-3 lg:h-4 lg:w-4" />
+                      <span className="hidden lg:inline">Videos</span>
                     </div>
                   </div>
                 </div>
@@ -144,10 +150,10 @@ export function AddStoryModal({ isOpen, setIsOpen }: AddStoryModalProps) {
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-1 lg:top-2 right-1 lg:right-2 h-6 w-6 lg:h-8 lg:w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={removeFile}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3 lg:h-4 lg:w-4" />
                 </Button>
               </div>
             )}
@@ -162,21 +168,31 @@ export function AddStoryModal({ isOpen, setIsOpen }: AddStoryModalProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={handleClose} className="flex-1" disabled={isUploading}>
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-3">
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              className="flex-1 bg-transparent text-xs lg:text-sm h-8 lg:h-auto"
+              disabled={isUploading}
+            >
               Cancel
             </Button>
-
-            <Button onClick={handlePublish} disabled={!selectedFile || isUploading} className="flex-1">
+            <Button
+              onClick={handlePublish}
+              disabled={!selectedFile || isUploading}
+              className="flex-1 text-xs lg:text-sm h-8 lg:h-auto"
+            >
               {isUploading ? (
                 <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Sharing...
+                  <div className="mr-1 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <span className="hidden lg:inline">Sharing...</span>
+                  <span className="lg:hidden">...</span>
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Share Story
+                  <Send className="mr-1 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4" />
+                  <span className="hidden lg:inline">Share Story</span>
+                  <span className="lg:hidden">Share</span>
                 </>
               )}
             </Button>
@@ -184,8 +200,12 @@ export function AddStoryModal({ isOpen, setIsOpen }: AddStoryModalProps) {
 
           {/* Upload Button for Mobile/Alternative Access */}
           {!previewUrl && (
-            <Button variant="ghost" onClick={() => fileInputRef.current?.click()} className="w-full">
-              <Upload className="mr-2 h-4 w-4" />
+            <Button
+              variant="ghost"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full text-xs lg:text-sm h-8 lg:h-auto"
+            >
+              <Upload className="mr-1 lg:mr-2 h-3 w-3 lg:h-4 lg:w-4" />
               Choose File
             </Button>
           )}

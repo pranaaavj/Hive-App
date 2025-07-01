@@ -18,7 +18,7 @@ export const chatApi = createApi({
         url: `/messages/${chatId}`,
         method: "GET",
       }),
-      providesTags: ["Messages"],
+      // providesTags: ["Messages"],
     }),
     sendMessage: builder.mutation({
       query: ({ senderId, receiverId, text, type }) => ({
@@ -26,11 +26,17 @@ export const chatApi = createApi({
         method: "POST",
         body: { senderId, receiverId, text, type },
       }),
-      invalidatesTags: ["Messages"],
+      // invalidatesTags: ["Messages"],
     }),
     notifications: builder.query({
       query: () => ({
         url: "/notifications/get-notifications",
+        method: "GET",
+      }),
+    }),
+    findChatByUserId: builder.query({
+      query: (userId) => ({
+        url: `/messages/find-chat/${userId}`,
         method: "GET",
       }),
     }),
@@ -42,4 +48,5 @@ export const {
   useLazyGetMessagesQuery,
   useSendMessageMutation,
   useNotificationsQuery,
+  useFindChatByUserIdQuery,
 } = chatApi;

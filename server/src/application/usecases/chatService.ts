@@ -69,5 +69,28 @@ export class ChatService {
   async getMessagesByChatId(chatId:string,page:number,limit:number) : Promise<PaginatedMessages>{
      return await this.messageRepository.findMessagesByChatId(chatId,page,limit)
   }
+  async findChatByUserId(userId: string) : Promise<Userchats | null> {
+    
+    const chat = await this.chatRepository.findChatByUserId(userId)
+    const user = await this.userRepository.findById(userId.toString() || "")
+    const lastMessage = await this.messageRepository.findLastMessage(chat?._id.toString() || "")
+    
+
+    const formattedChat = {
+      _id: chat?._id.toString(),
+      otherUser: {
+        _id: user?._id,
+        username: user?.username,
+        profilePic: user?.profilePicture,
+        isOnline: user?.isOnline,
+        
+      },
+      lastMessage: lastMessage,
+      updatedAt: chat?.updatedAt
+
+    }
+
+    return formattedChat as Userchats | null
+  }
   
 }

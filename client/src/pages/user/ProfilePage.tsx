@@ -328,6 +328,7 @@ export function ProfilePage() {
                 ) : (
                   <>
                     <Button
+                    onClick={() => navigate(`/messages/${userId}`)}
                       variant="default"
                       size="sm"
                       className="bg-violet-600 hover:bg-violet-700 shadow-sm"
