@@ -4,6 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import dayjs from "dayjs";
+import { Toaster } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+
+import { DeletePostDialog } from "./DeletePostDialog"; 
 import {
   Table,
   TableBody,
@@ -19,71 +24,42 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, Eye, Trash2, Flag, Heart, MessageCircle, Share } from "lucide-react";
+import { useGetAllPostsQuery,useDeletePostMutation, usePostCountQuery } from "@/services/adminApi";
 
-const postsData = [
-  {
-    id: 1,
-    author: "Alice Johnson",
-    avatar: "/placeholder.svg",
-    content: "Just finished an amazing hiking trip! The views were incredible. #nature #hiking",
-    type: "text",
-    status: "published",
-    createdAt: "2024-06-23",
-    likes: 234,
-    comments: 45,
-    shares: 12,
-    reports: 0,
-  },
-  {
-    id: 2,
-    author: "Bob Smith",
-    avatar: "/placeholder.svg",
-    content: "Check out this delicious pasta recipe I tried today!",
-    type: "image",
-    status: "flagged",
-    createdAt: "2024-06-22",
-    likes: 89,
-    comments: 23,
-    shares: 8,
-    reports: 3,
-  },
-  {
-    id: 3,
-    author: "Carol Williams",
-    avatar: "/placeholder.svg",
-    content: "Behind the scenes of our latest product launch. Exciting times ahead!",
-    type: "video",
-    status: "published",
-    createdAt: "2024-06-21",
-    likes: 456,
-    comments: 78,
-    shares: 34,
-    reports: 0,
-  },
-  {
-    id: 4,
-    author: "David Brown",
-    avatar: "/placeholder.svg",
-    content: "This content has been reported multiple times for spam",
-    type: "text",
-    status: "under_review",
-    createdAt: "2024-06-20",
-    likes: 12,
-    comments: 3,
-    shares: 1,
-    reports: 8,
-  },
-];
+export interface AdminPost {
+  _id: string;
+  userId: {
+    _id: string;
+    username: string;
+    profilePicture: string;
+  };
+  caption: string;
+  imageUrls: string[];
+  likes: string[];          // Array of user IDs who liked the post
+  likeCount: number;
+  commentCount: number;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export const PostsSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [posts, setPosts] = useState(postsData);
+  const [deleteUserPost, { isLoading: isDeleting }] = useDeletePostMutation();
+  const{data:allposts,refetch} = useGetAllPostsQuery(undefined)
+  const{data} = usePostCountQuery(undefined)
 
-  const filteredPosts = posts.filter(post =>
-    post.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+ const handleDeletePost = async (postId: string) => {
+  try {
+    await deleteUserPost(postId).unwrap();
+    toast.success("Post deleted successfully"); // optional toast
+    await refetch()
+  } catch (error) {
+    console.error("Failed to delete post:", error);
+    toast.error("Failed to delete post");
+  }
+};
   const getStatusColor = (status: string) => {
     switch (status) {
       case "published":
@@ -124,7 +100,7 @@ export const PostsSection = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">8,423</div>
+            <div className="text-2xl font-bold text-green-600">{data?.totalPosts}</div>
             <div className="text-sm text-gray-600">Published Posts</div>
           </CardContent>
         </Card>
@@ -184,53 +160,54 @@ export const PostsSection = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPosts.map((post) => (
-                  <TableRow key={post.id}>
+                {allposts?.posts?.map((post:AdminPost) => (
+                  <TableRow key={post._id}>
+                    
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={post.avatar} />
-                          <AvatarFallback>{post.author.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarImage src={post.userId.profilePicture} />
+                          <AvatarFallback>{post.userId.username.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
-                        <div className="font-medium">{post.author}</div>
+                        <div className="font-medium">{post.userId.username}</div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="max-w-xs truncate">{post.content}</div>
+                      <div className="max-w-xs truncate">{post.caption ?? 'no caption'}</div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span>{getTypeIcon(post.type)}</span>
-                        <span className="capitalize">{post.type}</span>
+                        {/* <span>{getTypeIcon(post.type)}</span> */}
+                        {/* <span className="capitalize">{post.type}</span> */}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(post.status)}>
-                        {post.status.replace('_', ' ')}
+                        {/* {post.status.replace('_', ' ')} */}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <Heart className="h-4 w-4" />
-                          {post.likes}
+                          {post.likeCount}
                         </div>
                         <div className="flex items-center gap-1">
                           <MessageCircle className="h-4 w-4" />
-                          {post.comments}
+                          {post.commentCount}
                         </div>
                         <div className="flex items-center gap-1">
                           <Share className="h-4 w-4" />
-                          {post.shares}
+                          {/* {post.shares} */}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {post.reports > 0 ? (
-                        <Badge variant="destructive">{post.reports}</Badge>
-                      ) : (
-                        <span className="text-gray-400">0</span>
-                      )}
+                      {/* {post.reports > 0 ? ( */}
+                        {/* // <Badge variant="destructive">{post.createdAt}</Badge> */}
+                      {/* ) : ( */}
+                        {/* // <span className="text-gray-400">0</span> */}
+                      {/* )} */}
                     </TableCell>
                     <TableCell>{post.createdAt}</TableCell>
                     <TableCell>
@@ -249,10 +226,15 @@ export const PostsSection = () => {
                             <Flag className="mr-2 h-4 w-4" />
                             Flag Content
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
+                          <DeletePostDialog
+                                postId={post._id}
+                                onDelete={handleDeletePost}
+                                disabled={isDeleting}
+                          ></DeletePostDialog>
+                          {/* <DropdownMenuItem className="text-red-600">
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Post
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -263,6 +245,7 @@ export const PostsSection = () => {
           </div>
         </CardContent>
       </Card>
+        <Toaster position="top-right" />
     </div>
   );
 };

@@ -1,10 +1,16 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { useDebounce } from "use-debounce";
 
 export interface UserManagement {
   _id: string;
@@ -12,7 +18,7 @@ export interface UserManagement {
   email: string;
   profilePicture: string;
   postsCount: number;
-  status:boolean;
+  status: boolean;
   followers: number;
   createdAt: string; // or `Date` if you parse it
 }
@@ -32,69 +38,38 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Search, MoreHorizontal, Ban, Shield, Mail } from "lucide-react";
-import { useGetAllUsersQuery, useSuspendUserMutation, useUserCountsQuery } from "@/services/adminApi";
-
-const usersData = [
-  {
-    id: 1,
-    name: "Alice Johnson",
-    email: "alice@example.com",
-    avatar: "/placeholder.svg",
-    status: "active",
-    joinDate: "2024-01-15",
-    posts: 23,
-    followers: 1245,
-    verified: true,
-  },
-  {
-    id: 2,
-    name: "Bob Smith",
-    email: "bob@example.com",
-    avatar: "/placeholder.svg",
-    status: "suspended",
-    joinDate: "2024-02-08",
-    posts: 7,
-    followers: 89,
-    verified: false,
-  },
-  {
-    id: 3,
-    name: "Carol Williams",
-    email: "carol@example.com",
-    avatar: "/placeholder.svg",
-    status: "active",
-    joinDate: "2024-03-12",
-    posts: 156,
-    followers: 3421,
-    verified: true,
-  },
-  {
-    id: 4,
-    name: "David Brown",
-    email: "david@example.com",
-    avatar: "/placeholder.svg",
-    status: "pending",
-    joinDate: "2024-06-20",
-    posts: 2,
-    followers: 12,
-    verified: false,
-  },
-];
+import {
+  useGetAllUsersQuery,
+  useSuspendUserMutation,
+  useUserCountsQuery,
+  useSearchUsersQuery,
+} from "@/services/adminApi";
 
 export const UsersSection = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState(usersData);
-  const{data:getAllUsers,isLoading,refetch} = useGetAllUsersQuery(undefined)
-  const [suspendUser] = useSuspendUserMutation()
-  // console.log(getAllUsers,'all the users ')
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const {
+    data: getAllUsers,
+    isLoading,
+    refetch,
+  } = useGetAllUsersQuery(undefined);
+  const [suspendUser] = useSuspendUserMutation();
 
-   const {data}= useUserCountsQuery(undefined)
-  console.log(data,'daataaa')
+  const [input, setInput] = useState("");
+  const [debouncedInput] = useDebounce(input, 100);
+  const { data: usersData } = useSearchUsersQuery(debouncedInput, {
+    skip: debouncedInput.length === 0,
+  });
+  const [users, setUsers] = useState(getAllUsers?.allUsers);
+  const { data } = useUserCountsQuery(undefined);
 
+  useEffect(() => {
+    if (input.length >0) {
+      setUsers(usersData?.user);
+    }else if(input.length == 0) {
+      setUsers(getAllUsers?.allUsers)
+    }
+  }, [input]);
+
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "active":
@@ -108,16 +83,22 @@ export const UsersSection = () => {
     }
   };
 
-  const handleSuspendUser = async(userId:string,status:boolean)=>{
-    await suspendUser({userId,status:!status}).unwrap()
-    await refetch()
+  const handleSuspendUser = async (userId: string, status: boolean) => {
+    await suspendUser({ userId, status: !status }).unwrap();
+    await refetch();
+  };
+
+  if(isLoading) {
+    return <p>User are loading</p>
   }
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-2">Manage and moderate user accounts</p>
+          <p className="text-gray-600 mt-2">
+            Manage and moderate user accounts
+          </p>
         </div>
         <Button>Add New User</Button>
       </div>
@@ -126,13 +107,17 @@ export const UsersSection = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-600">{data?.userCount ?? 0}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {data?.userCount ?? 0}
+            </div>
             <div className="text-sm text-gray-600">Active Users</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-red-600">{data?.suspendedUser?? 0}</div>
+            <div className="text-2xl font-bold text-red-600">
+              {data?.suspendedUser ?? 0}
+            </div>
             <div className="text-sm text-gray-600">Suspended</div>
           </CardContent>
         </Card>
@@ -154,16 +139,21 @@ export const UsersSection = () => {
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
-          <CardDescription>A comprehensive list of all registered users</CardDescription>
+          <CardDescription>
+            A comprehensive list of all registered users
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <Input
                 placeholder="Search users by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -184,13 +174,18 @@ export const UsersSection = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {getAllUsers?.allUsers?.map((user:UserManagement) => (
+                {users?.map((user: UserManagement) => (
                   <TableRow key={user._id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={user.profilePicture} />
-                          <AvatarFallback>{user.username.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarFallback>
+                            {user.username
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="flex items-center gap-2">
@@ -199,13 +194,21 @@ export const UsersSection = () => {
                               <Shield className="h-4 w-4 text-blue-500" />
                             )} */}
                           </div>
-                          <div className="text-sm text-gray-500">{user.email}</div>
+                          <div className="text-sm text-gray-500">
+                            {user.email}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={user.status? 'bg-green-100 text-green-800':'bg-red-100 text-red-800'}>
-                        {user.status ? 'active':'suspended'}
+                      <Badge
+                        className={
+                          user.status
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }
+                      >
+                        {user.status ? "active" : "suspended"}
                       </Badge>
                     </TableCell>
                     <TableCell>{user.createdAt}</TableCell>
@@ -227,9 +230,14 @@ export const UsersSection = () => {
                             <Shield className="mr-2 h-4 w-4" />
                             Verify User
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={()=>handleSuspendUser(user._id,user.status)}>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() =>
+                              handleSuspendUser(user._id, user.status)
+                            }
+                          >
                             <Ban className="mr-2 h-4 w-4" />
-                            {user.status? "Block" : "Unblock"}
+                            {user.status ? "Block" : "Unblock"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

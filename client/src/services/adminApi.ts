@@ -1,10 +1,11 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { adminBaseQueryWithReauth } from "./adminBaseQuery"; 
+import { adminBaseQueryWithReauth } from "./adminBaseQuery";
+
 
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: adminBaseQueryWithReauth,
-  tagTypes: ['UserCounts'],
+  tagTypes: ["UserCounts", "DeletePost"],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (loginData) => ({
@@ -38,33 +39,63 @@ export const adminApi = createApi({
       query: () => ({
         url: "/admin/logout",
         method: "POST",
-        credentials: "include"
-      })
-    }),  
-    
-    getAllUsers:builder.query({
-      query:()=>({
-        url:'/admin/getusers',
-        method:"GET",
-      })
+        credentials: "include",
+      }),
     }),
 
-    suspendUser:builder.mutation({
-      query:({userId,status})=>({
-        url:`/admin/${userId}/suspend`,
-        method:"PATCH",
-        body:{status}
+    getAllUsers: builder.query({
+      query: () => ({
+        url: "/admin/getusers",
+        method: "GET",
       }),
-      invalidatesTags: ['UserCounts'], 
     }),
 
-    userCounts:builder.query({
-      query:()=>({
-        url:'/admin/usercount',
-        method:'GET',
+    suspendUser: builder.mutation({
+      query: ({ userId, status }) => ({
+        url: `/admin/${userId}/suspend`,
+        method: "PATCH",
+        body: { status },
       }),
-      providesTags: ['UserCounts'],
-    })
+      invalidatesTags: ["UserCounts"],
+    }),
+
+    userCounts: builder.query({
+      query: () => ({
+        url: "/admin/usercount",
+        method: "GET",
+      }),
+      providesTags: ["UserCounts"],
+    }),
+
+    getAllPosts: builder.query({
+      query: () => ({
+        url: "/admin/getposts",
+        method: "GET",
+      }),
+    }),
+
+    deletePost: builder.mutation({
+      query: (postId) => ({
+        url: `/admin/deletepost/${postId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["DeletePost"],
+    }),
+
+    postCount: builder.query({
+      query: () => ({
+        url: "/admin/totalposts",
+        method: "GET",
+      }),
+      providesTags: ["DeletePost"],
+    }),
+
+    searchUsers: builder.query({
+      query: (searchTerm) => ({
+        url: `/admin/search-user?q=${encodeURIComponent(searchTerm)}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -72,5 +103,9 @@ export const {
   useLoginMutation,
   useGetAllUsersQuery,
   useSuspendUserMutation,
-  useUserCountsQuery
+  useUserCountsQuery,
+  useGetAllPostsQuery,
+  useDeletePostMutation,
+  usePostCountQuery,
+  useSearchUsersQuery
 } = adminApi;
