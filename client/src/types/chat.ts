@@ -15,6 +15,7 @@ export interface ChatPreview {
         isSeen: boolean;
         createdAt: string;
         updatedAt: string;
+        type: string,
         __v: number;
       };
       updatedAt: string;

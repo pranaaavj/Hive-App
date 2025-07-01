@@ -6,6 +6,7 @@ export interface MessageRepository {
   createMessage(chatId: string, senderId: string, text: string, type: string): Promise<IMessage>;
   findLastMessage(chatId: string): Promise<IMessage | null>;
   findMessagesByChatId(chatId: string, page: number, limit: number): Promise<PaginatedMessages>;
+  
 }
 
 export class MongoMessageRepository implements MessageRepository {
@@ -36,7 +37,7 @@ export class MongoMessageRepository implements MessageRepository {
       .sort({ createdAt: 1 })
       // .skip(skip)
       // .limit(limit)
-      .populate("sender", "_id profilePicture")
+      .populate("sender", "_id profilePicture username")
 
       console.log('profile pic',rawMessages)
 
@@ -44,6 +45,7 @@ export class MongoMessageRepository implements MessageRepository {
         messageId:msg._id.toString(),
         senderId: msg.sender._id,
         profilePic:  (msg.sender as any).profilePicture,
+        username: (msg.sender as any).username,
  
         text:msg.text,
         isSeen:msg.isSeen,

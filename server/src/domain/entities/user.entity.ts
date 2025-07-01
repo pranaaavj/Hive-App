@@ -7,6 +7,7 @@ export interface IUser {
   password: string;
   role: string;
   isVerified: boolean;
+   profilePicture?: string; 
   resetPasswordToken?: string;
   isDeleted: boolean;
   isOnline: boolean,

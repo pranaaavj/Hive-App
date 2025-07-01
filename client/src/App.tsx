@@ -36,6 +36,7 @@ function App() {
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/profile/edit/:userId" element={<ProfileEditPage />} />
           <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/messages/:userId" element={<MessagesPage />} />
         </Route>
       </Route>
 

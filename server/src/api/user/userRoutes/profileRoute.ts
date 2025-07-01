@@ -13,7 +13,9 @@ export function setupProfileRoutes(profileController: ProfileControler): Router 
   router.patch("/update-profile", authMiddleware, profileController.updateProfile)
   router.get("/following", authMiddleware, profileController.getFollowing)
   router.get("/followers", authMiddleware, profileController.getFollowers)
-  router.get("/username-profile", authMiddleware, profileController.usernameAndProfile)
+router.get("/username-profile", authMiddleware, profileController.usernameAndProfile);
+router.get("/username-profile/:userId", authMiddleware, profileController.usernameAndProfile);
+
 
   return router;
 }

@@ -5,6 +5,7 @@ export interface ChatRepository {
     findChatByUsers(userId1: string, userId2: string) : Promise<IChat | null>
     createChat(members: string[]) : Promise<IChat>
     findChatsByUserId(userId: string) : Promise<IChat[]>
+    findChatByUserId(userId: string) : Promise<IChat | null>
 }
 
 export class MongoChatRepository  implements ChatRepository {
@@ -24,5 +25,11 @@ export class MongoChatRepository  implements ChatRepository {
     }
     async findChatsByUserId(userId: string): Promise<IChat[]> {
         return await ChatModel.find({members: userId}).sort({updatedAt: -1})
+    }
+    async findChatByUserId(userId: string): Promise<IChat | null> {
+        
+        const chat = await ChatModel.findOne({ members: { $in: [userId] } })
+        console.log(chat, "chat value")
+        return chat
     }
 }

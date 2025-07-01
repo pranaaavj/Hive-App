@@ -53,5 +53,18 @@ export class ChatController {
       next(error)
     }
   }
+  getChatByUserId = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const chatUserId = req.params.userId; 
+    console.log(chatUserId, "chatUserId")
 
-}
+    const chat = await this.chatService.findChatByUserId(chatUserId);
+
+    res.status(200).json(chat);
+
+  } catch (error) {
+    next(error);
+  }
+};
+  }
+   
