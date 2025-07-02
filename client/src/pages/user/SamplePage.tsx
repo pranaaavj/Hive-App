@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Check, Star, Zap, Shield, Users, Sparkles } from "lucide-react"
 import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 export function SamplePage() {
+    const navigate = useNavigate()
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
@@ -88,6 +90,7 @@ export function SamplePage() {
               </div>
             </div>
           </div>
+          <Button onClick={() => navigate("/login")}>Login page</Button>
         </section>
 
         {/* Features Section */}
