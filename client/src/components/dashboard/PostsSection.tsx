@@ -2,9 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import dayjs from "dayjs";
 import { Toaster } from 'react-hot-toast';
 import { toast } from 'react-hot-toast';
 
@@ -23,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, Eye, Trash2, Flag, Heart, MessageCircle, Share } from "lucide-react";
+import { Search, MoreHorizontal, Eye, Flag, Heart, MessageCircle, Share } from "lucide-react";
 import { useGetAllPostsQuery,useDeletePostMutation, usePostCountQuery } from "@/services/adminApi";
 
 export interface AdminPost {
@@ -60,31 +58,6 @@ export const PostsSection = () => {
     toast.error("Failed to delete post");
   }
 };
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "published":
-        return "bg-green-100 text-green-800";
-      case "flagged":
-        return "bg-red-100 text-red-800";
-      case "under_review":
-        return "bg-yellow-100 text-yellow-800";
-      case "draft":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "image":
-        return "🖼️";
-      case "video":
-        return "🎥";
-      default:
-        return "📝";
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -182,9 +155,7 @@ export const PostsSection = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(post.status)}>
-                        {/* {post.status.replace('_', ' ')} */}
-                      </Badge>
+              
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-4 text-sm text-gray-600">

@@ -4,6 +4,12 @@ import { InputField } from "@/components/InputField";
 import { useForgetPasswordMutation } from "@/services/authApi";
 import { Link } from "react-router-dom";
 
+type ApiError = {
+  data?: {
+    message?: string;
+  };
+};
+
 export const ForgetPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [touched, setTouched] = useState(false);
@@ -32,10 +38,15 @@ export const ForgetPasswordPage: React.FC = () => {
       await forgotPassword({ email }).unwrap();
       setSuccessMessage("Reset link sent! Check your email.");
       setError(null);
-    } catch (err: any) {
-      setSuccessMessage(null);
-      setError(err?.data?.message || "Failed to send reset link. Try again.");
-    }
+    } catch (err) {
+  if (typeof err === "object" && err !== null && "data" in err) {
+    const apiErr = err as ApiError;
+    setError(apiErr.data?.message || "Failed to send reset link. Try again.");
+  } else {
+    setError("Failed to send reset link. Try again.");
+  }
+  setSuccessMessage(null);
+}
   };
 
   return (

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
-import { TrendingUp, Users, Eye, MessageSquare, Share2, Heart } from "lucide-react";
+import { TrendingUp, Users, Eye, Heart } from "lucide-react";
 
 const userActivityData = [
   { date: '2024-06-17', users: 1200, sessions: 1800, pageViews: 3400 },
@@ -168,7 +168,7 @@ export const AnalyticsSection = () => {
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${(percent as number * 100).toFixed(0)}%`}
                     >
                       {demographicsData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />

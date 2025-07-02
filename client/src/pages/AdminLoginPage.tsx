@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setAdmin } from "@/redux/slices/adminSlice";
+import { ApiError } from "@/types/error";
 
 export const AdminLoginPage: React.FC = () => {
 
@@ -18,7 +19,7 @@ export const AdminLoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Partial<AdminLoginFormData>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [login, { isLoading, isError, error }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
   const validateField = (name: keyof AdminLoginFormData, value: string): string => {
     switch (name) {
@@ -102,11 +103,17 @@ export const AdminLoginPage: React.FC = () => {
         localStorage.setItem('adminAccessToken',res.adminAccessToken)
         navigate("/adminhome")
     
-      } catch (err: any) {
-        const message = err?.data?.error || "Login failed. Please try again.";
-        setErrors({ email: message });
+      } catch (err: unknown) {
+        console.log(err);
+        // Narrow it safely:
+        const apiErr = err as ApiError;
+      
+        const fieldErrors = apiErr?.data?.fields;
+        if (fieldErrors) {
+          setErrors(fieldErrors);
+        }
       }
-    }
+        }
   };
 
   const togglePasswordVisibility = () => {

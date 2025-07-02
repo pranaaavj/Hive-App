@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { BrowserRouter as Router } from "react-router-dom";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";

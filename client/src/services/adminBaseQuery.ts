@@ -2,6 +2,12 @@ import { fetchBaseQuery } from "@reduxjs/toolkit/query";
 import { RootState } from "@/redux/store/store";
 import { logout,setAdmin} from "@/redux/slices/adminSlice";
 
+interface RefreshResponse {
+  data: {
+    accessToken: string;
+  };
+}
+
 const baseQuery = fetchBaseQuery({
   baseUrl: `${import.meta.env.VITE_BASE_URL}/api`,
   credentials: "include",
@@ -22,7 +28,7 @@ export const adminBaseQueryWithReauth: typeof baseQuery = async (args, api, extr
     console.log("Refresh result:", refreshResult);
 
     if (refreshResult.data) {
-      const accessToken = (refreshResult.data as any).data.accessToken; 
+      const accessToken = (refreshResult.data as RefreshResponse).data?.accessToken; 
       localStorage.setItem('adminAccessToken', accessToken);
       api.dispatch(setAdmin({admin:(api.getState() as RootState).admin.admin }));
       result = await baseQuery(args, api, extraOptions); 

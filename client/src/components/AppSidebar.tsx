@@ -28,6 +28,13 @@ interface AppSidebarProps {
   minimalMode?: boolean
   isMobile?: boolean
 }
+interface SearchUser {
+    _id: string;
+    username: string;
+    profilePicture?: string;
+    followers: number;
+  }
+  
 
 const MINIMAL_MODE_PAGES = ["/create", "/messages", "/settings", "/edit-profile"]
 
@@ -198,7 +205,7 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
                       {!isLoading && users.length === 0 && (
                         <div className="p-4 text-center text-gray-500 text-sm">No users found matching "{query}"</div>
                       )}
-                      {users.map((user) => (
+                      {users.map((user: SearchUser) => (
                         <div
                           key={user._id}
                           className="p-3 hover:bg-amber-50 transition-colors flex items-center gap-3 cursor-pointer border-b border-gray-50 last:border-b-0"

@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -33,17 +31,10 @@ import { uploadAudioToCloudinary } from "@/utils/cloudinary";
 import { useParams } from "react-router-dom";
 import { useUsernameAndProfileQuery } from "@/services/authApi";
 
-// TypeScript interfaces
-interface User {
-  id: string;
-  name: string;
+interface NewUserType {
+  _id: string;
   username: string;
-  avatar: string;
-  isOnline: boolean;
-  lastSeen?: string;
-  bio?: string;
-  followers?: number;
-  following?: number;
+  profilePicture: string;
 }
 
 interface ApiMessage {
@@ -55,22 +46,6 @@ interface ApiMessage {
   username: string;
   senderId?: string;
   type: string;
-}
-
-interface Message {
-  id: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  timestamp: Date;
-  isRead: boolean;
-}
-
-interface Chat {
-  id: string;
-  user: User;
-  lastMessage: Message;
-  unreadCount: number;
 }
 
 interface SocketMessage {
@@ -96,7 +71,7 @@ export default function MessagesPage() {
 
   // State for new chat scenario
   const [isNewChat, setIsNewChat] = useState(false);
-  const [newChatUser, setNewChatUser] = useState<any>(null);
+  const [newChatUser, setNewChatUser] = useState<NewUserType | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -122,20 +97,15 @@ export default function MessagesPage() {
   );
 
   // Audio states
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
     null
   );
-  const [audioChunks, setAudioChunks] = useState<BlobPart[]>([]);
   const [isRecording, setIsRecording] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const isCancelledRef = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const waveformRef = useRef<NodeJS.Timeout | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [waveformData, setWaveformData] = useState<number[]>(Array(15).fill(0));
-   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -156,18 +126,15 @@ export default function MessagesPage() {
         }
         setSelectedChat(chat);
       } else {
-        // No existing chat, set up new chat scenario
         if (!isNewChat) {
           setIsNewChat(true);
           setNewChatUser(userDetails);
           setSelectedChat(null);
-          setRealtimeMessages([]); // Clear any previous messages
+          setRealtimeMessages([]);
         }
       }
     }
   }, [chat, userDetails, userId, chatLoading, isNewChat]);
-
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (userMessages?.data?.messages || realtimeMessages.length > 0) {
       setTimeout(() => {
@@ -239,7 +206,6 @@ export default function MessagesPage() {
   useEffect(() => {
     const handleMessageSeen = async ({
       chatId,
-      seenBy,
     }: {
       chatId: string;
       seenBy: string;
@@ -480,7 +446,6 @@ export default function MessagesPage() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setStream(stream);
 
       const recorder = new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
@@ -488,19 +453,13 @@ export default function MessagesPage() {
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = async () => {
         stream.getTracks().forEach((track) => track.stop());
-        setStream(null);
 
         if (isCancelledRef.current) {
-          setAudioBlob(null);
-          setAudioUrl(null);
           return;
         }
 
         const blob = new Blob(chunks, { type: "audio/webm" });
-        setAudioBlob(blob);
         const url = await uploadAudioToCloudinary(blob);
-        console.log(url);
-        setAudioUrl(url);
 
         const tempMessage: ApiMessage = {
           messageId: `temp-sent-${Date.now()}`,
@@ -519,7 +478,7 @@ export default function MessagesPage() {
           if (isNewChat && newChatUser) {
             await sendMessage({
               senderId: currentUserId,
-              receiverId: newChatUser._id,
+              receiverId: newChatUser?._id,
               text: url,
               type: "audio",
             });
@@ -547,13 +506,10 @@ export default function MessagesPage() {
             prev.filter((msg) => msg.messageId !== tempMessage.messageId)
           );
         }
-
-        setStream(null);
       };
 
       recorder.start();
       setMediaRecorder(recorder);
-      setAudioChunks(chunks);
       setIsRecording(true);
     } catch (error) {
       console.error("Microphone access denied or not available", error);
@@ -594,97 +550,117 @@ export default function MessagesPage() {
     const isCurrentUser =
       message.senderId === currentUserId || !message.senderId;
     return (
-      <div className={`flex mb-4 ${isCurrentUser ? "justify-end" : "justify-start"}`}>
-      <div className={`flex max-w-[75%] ${isCurrentUser ? "flex-row-reverse" : "flex-row"} items-end gap-2`}>
-        {/* Avatar */}
-        <div className="flex-shrink-0">
-          <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
-            {message?.profilePic ? (
-              <AvatarImage
-                src={message.profilePic || "/placeholder.svg"}
-                alt={message.username}
-                className="object-cover"
-              />
-            ) : (
-              <AvatarImage src="/placeholder.svg?height=32&width=32" alt="Default" />
-            )}
-            <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-blue-400 to-purple-500 text-white">
-              {message?.username?.charAt(0)?.toUpperCase() || "?"}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-
-        {/* Message Bubble */}
-        <div className="flex flex-col">
-          {/* Username (only for others) */}
-          {!isCurrentUser && (
-            <div className="mb-1 ml-3">
-              <span className="text-xs font-medium text-gray-600">{message.username}</span>
-            </div>
-          )}
-
-          {/* Message Content */}
-          <div
-            className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md ${
-              isCurrentUser
-                ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
-                : "bg-white border border-gray-200 text-gray-900 rounded-bl-md"
-            }`}
-          >
-            {/* Message Body */}
-            {message?.type === "audio" ? (
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${isCurrentUser ? "bg-blue-400" : "bg-gray-100"}`}>
-                  <Volume2 className={`h-4 w-4 ${isCurrentUser ? "text-white" : "text-gray-600"}`} />
-                </div>
-                <audio
-                  controls
-                  src={message.text}
-                  className="h-8 flex-1"
-                  onPlay={() => setIsAudioPlaying(true)}
-                  onPause={() => setIsAudioPlaying(false)}
-                  onEnded={() => setIsAudioPlaying(false)}
+      <div
+        className={`flex mb-4 ${
+          isCurrentUser ? "justify-end" : "justify-start"
+        }`}
+      >
+        <div
+          className={`flex max-w-[75%] ${
+            isCurrentUser ? "flex-row-reverse" : "flex-row"
+          } items-end gap-2`}
+        >
+          {/* Avatar */}
+          <div className="flex-shrink-0">
+            <Avatar className="h-8 w-8 border-2 border-white shadow-sm">
+              {message?.profilePic ? (
+                <AvatarImage
+                  src={message.profilePic || "/placeholder.svg"}
+                  alt={message.username}
+                  className="object-cover"
                 />
+              ) : (
+                <AvatarImage
+                  src="/placeholder.svg?height=32&width=32"
+                  alt="Default"
+                />
+              )}
+              <AvatarFallback className="text-xs font-medium bg-gradient-to-br from-blue-400 to-purple-500 text-white">
+                {message?.username?.charAt(0)?.toUpperCase() || "?"}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+
+          {/* Message Bubble */}
+          <div className="flex flex-col">
+            {/* Username (only for others) */}
+            {!isCurrentUser && (
+              <div className="mb-1 ml-3">
+                <span className="text-xs font-medium text-gray-600">
+                  {message.username}
+                </span>
               </div>
-            ) : (
-              <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{message.text}</p>
             )}
 
-            {/* Message Info */}
+            {/* Message Content */}
             <div
-              className={`flex items-center justify-between mt-2 gap-2 ${
-                isCurrentUser ? "flex-row-reverse" : "flex-row"
+              className={`relative px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-md ${
+                isCurrentUser
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-br-md"
+                  : "bg-white border border-gray-200 text-gray-900 rounded-bl-md"
               }`}
             >
-              {/* Timestamp */}
-              <span className={`text-xs ${isCurrentUser ? "text-blue-100" : "text-gray-500"}`}>
-                {formatTime(message.createdAt)}
-              </span>
-
-              {/* Read Status (only for current user) */}
-              {isCurrentUser && (
-                <div className="flex items-center">
-                  {message.isSeen ? (
-                    <CheckCheck className="h-4 w-4 text-blue-200" />
-                  ) : (
-                    <Check className="h-4 w-4 text-blue-300" />
-                  )}
+              {/* Message Body */}
+              {message?.type === "audio" ? (
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2 rounded-full ${
+                      isCurrentUser ? "bg-blue-400" : "bg-gray-100"
+                    }`}
+                  >
+                    <Volume2
+                      className={`h-4 w-4 ${
+                        isCurrentUser ? "text-white" : "text-gray-600"
+                      }`}
+                    />
+                  </div>
+                  <audio controls src={message.text} className="h-8 flex-1" />
                 </div>
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                  {message.text}
+                </p>
               )}
-            </div>
 
-            {/* Message Tail */}
-            <div
-              className={`absolute top-4 w-3 h-3 transform rotate-45 ${
-                isCurrentUser
-                  ? "-right-1 bg-gradient-to-r from-blue-500 to-blue-600"
-                  : "-left-1 bg-white border-l border-b border-gray-200"
-              }`}
-            />
+              {/* Message Info */}
+              <div
+                className={`flex items-center justify-between mt-2 gap-2 ${
+                  isCurrentUser ? "flex-row-reverse" : "flex-row"
+                }`}
+              >
+                {/* Timestamp */}
+                <span
+                  className={`text-xs ${
+                    isCurrentUser ? "text-blue-100" : "text-gray-500"
+                  }`}
+                >
+                  {formatTime(message.createdAt)}
+                </span>
+
+                {/* Read Status (only for current user) */}
+                {isCurrentUser && (
+                  <div className="flex items-center">
+                    {message.isSeen ? (
+                      <CheckCheck className="h-4 w-4 text-blue-200" />
+                    ) : (
+                      <Check className="h-4 w-4 text-blue-300" />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Message Tail */}
+              <div
+                className={`absolute top-4 w-3 h-3 transform rotate-45 ${
+                  isCurrentUser
+                    ? "-right-1 bg-gradient-to-r from-blue-500 to-blue-600"
+                    : "-left-1 bg-white border-l border-b border-gray-200"
+                }`}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
     );
   };
 
@@ -797,7 +773,7 @@ export default function MessagesPage() {
                     <AvatarImage
                       src={
                         isNewChat
-                          ? newChatUser?.profilePic || "/placeholder.svg"
+                          ? newChatUser?.profilePicture || "/placeholder.svg"
                           : selectedChat?.otherUser?.profilePic ||
                             "/placeholder.svg"
                       }
@@ -816,11 +792,16 @@ export default function MessagesPage() {
                         .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  {onlineUsers.includes(
-                    isNewChat ? newChatUser?._id : selectedChat?.otherUser?._id
-                  ) && (
-                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></div>
-                  )}
+                  {(isNewChat
+                    ? newChatUser?._id
+                    : selectedChat?.otherUser?._id) &&
+                    onlineUsers.includes(
+                      isNewChat
+                        ? newChatUser!._id
+                        : selectedChat!.otherUser!._id
+                    ) && (
+                      <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    )}
                 </div>
                 <div className="ml-3">
                   <p className="text-sm font-medium">
@@ -830,9 +811,9 @@ export default function MessagesPage() {
                   </p>
                   <p className="text-xs text-gray-500">
                     {onlineUsers.includes(
-                      isNewChat
+                      (isNewChat
                         ? newChatUser?._id
-                        : selectedChat?.otherUser?._id
+                        : selectedChat?.otherUser?._id) ?? ""
                     )
                       ? "Online"
                       : "Offline"}
@@ -872,7 +853,7 @@ export default function MessagesPage() {
                             <Avatar className="h-16 w-16 mx-auto mb-4">
                               <AvatarImage
                                 src={
-                                  newChatUser?.profilePic || "/placeholder.svg"
+                                  newChatUser?.profilePicture || "/placeholder.svg"
                                 }
                                 alt={newChatUser?.username}
                               />

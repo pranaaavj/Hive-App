@@ -1,16 +1,13 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect} from "react";
 import {
   Calendar,
   Edit,
   Heart,
-  LinkIcon,
-  MapPin,
   MessageCircle,
   Share2,
   UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, useParams } from "react-router-dom";
@@ -26,23 +23,9 @@ import { useGetProfileDetailsQuery } from "@/services/authApi";
 import { FollowingFollowersModal } from "@/components/modals/FollowingFollowersModal";
 import { useMyStoriesQuery, useMarkStorySeenMutation } from "@/services/postApi";
 import { StoriesModal } from "@/components/modals/StoriesModal";
+import { Story } from "@/components/StorySection";
 
 // Types for our data models
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  bio: string;
-  location: string;
-  website: string;
-  joinDate: string;
-  following: number;
-  followers: number;
-  posts: number;
-  profileImage: string;
-  coverImage: string;
-  isVerified: boolean;
-}
 
 export type Post = {
   _id: string;
@@ -114,7 +97,6 @@ export function ProfilePage() {
     isLoading: isProfileLoading,
     refetch: refetchProfile,
   } = useGetProfileDetailsQuery(userId);
-  const [activeTab, setActiveTab] = useState("posts");
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
 
@@ -239,7 +221,7 @@ export function ProfilePage() {
             
               className={`rounded-full overflow-hidden p-[3px] h-32 w-32  ${
                 myStories?.stories?.length > 0
-                  ? myStories?.stories?.every((story) => story.isSeen)
+                  ? myStories?.stories?.every((story: Story) => story.isSeen)
                     ? "bg-gray-400 cursor-pointer"
                     : "cursor-pointer bg-gradient-to-br from-amber-300 to-amber-500"
                   : ""

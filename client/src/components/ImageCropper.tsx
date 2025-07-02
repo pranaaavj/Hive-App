@@ -57,7 +57,6 @@ export function ImageCropper({ image, onCropComplete }: ImageCropperProps) {
     const cropX = completedCrop.x
     const cropY = completedCrop.y
 
-    const size = Math.min(cropWidth, cropHeight)
     const outputSize = 300
     canvas.width = outputSize
     canvas.height = outputSize
