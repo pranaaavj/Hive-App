@@ -25,7 +25,7 @@ export const postApi = createApi({
         method: 'POST',
         credentials: 'include',
       }),
-      invalidatesTags: (result, error, postId) => [{ type: 'Post', id: postId }],
+      invalidatesTags: (_, __, postId) => [{ type: 'Post', id: postId }],
     }),
 
     unlikePost: builder.mutation({

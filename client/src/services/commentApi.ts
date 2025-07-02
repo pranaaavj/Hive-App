@@ -23,7 +23,7 @@ createComment: builder.mutation<
     method: "POST",
     body,
   }),
-  invalidatesTags: (result, error, arg) => {
+  invalidatesTags: (_, __, arg) => {
     const tags: { type: "Comment" | "Reply"; id: string }[] = [
       { type: "Comment" as const, id: arg.postId },
     ];
@@ -45,7 +45,7 @@ createComment: builder.mutation<
         url: `/comments/post/${postId}`,
         params: { page, limit },
       }),
-      providesTags: (result, error, arg) =>
+      providesTags: (result, __, arg) =>
         result?.data
           ? [
               ...result.data.map(({ _id }) => ({
@@ -70,7 +70,7 @@ createComment: builder.mutation<
         url: `/comments/replies/${commentId}`,
         params: { page, limit },
       }),
-      providesTags: (result, error, arg) =>
+      providesTags: (result, __, arg) =>
         result?.data
           ? [
               ...result.data.map(({ _id }) => ({
@@ -91,7 +91,7 @@ createComment: builder.mutation<
         url: `/comments/${commentId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, arg) => [
+      invalidatesTags: (_, __, arg) => [
         { type: "Comment", id: arg.commentId },
         { type: "Reply", id: arg.commentId },
         { type: "Comment", id: arg.postId },
