@@ -18,14 +18,14 @@ const httpServer = createServer(app);
 setupWebSocket(httpServer);
 app.use(morgan('dev')); 
 app.use(cors({ 
-  origin: [process.env.CLIENT_URL || 'https://hiveapp.work'], 
+  origin: ['http://localhost:5173', 'http://frontend:5173'], 
   credentials: true 
 }));
 app.use(express.json());
 app.use(cookieParser());
 
 console.log('heey')
-const port = Number(process.env.PORT) || 5001;
+const port = process.env.PORT || 5001
 
 app.use("/api", router)
 
@@ -37,9 +37,10 @@ const startServer = async () => {
     // 🧠 Connect DB first
     await connectDB();
     
-    httpServer.listen(port, '0.0.0.0', () => {
-  console.log(`🚀 Server running at http://0.0.0.0:${port}`);
-});
+    httpServer.listen(port, () => {
+      console.log(`🚀 Server running at http://localhost:${port}`);
+    });
+
     // Graceful shutdown
     process.on('SIGTERM', () => {
       console.log('SIGTERM received. Shutting down gracefully...');
