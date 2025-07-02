@@ -14,6 +14,7 @@ import { setupPostSocketListeners } from "./lib/socketListeners";
 import { useSocketAuth } from "./hooks/useSocketAuth";
 import { useEffect } from "react";
 import { UserProtectedRoute, AdminProtectedRoute } from "./utils/ProtectedRoute";
+import { SamplePage } from "./pages/user/SamplePage";
 
 function App() {
   useSocketAuth();
@@ -24,6 +25,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<SamplePage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forget-password" element={<ForgetPasswordPage />} />
