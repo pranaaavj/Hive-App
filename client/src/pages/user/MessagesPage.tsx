@@ -210,8 +210,8 @@ export default function MessagesPage() {
           text: data.text,
           isSeen: false,
           createdAt: data.createdAt,
-          profilePic: data.profilePic,
-          username: data?.username,
+          profilePic: data.profilePic || "",
+          username: data?.username || "",
           senderId: data.senderId,
           type: data.type,
         };
