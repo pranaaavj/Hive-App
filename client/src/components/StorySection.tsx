@@ -3,14 +3,17 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import { PlusCircle } from "lucide-react"
-import { useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { AddStoryModal } from "./modals/AddStroryModal"
 import { useGetStoriesQuery, useMarkStorySeenMutation, useMyStoriesQuery } from "@/services/postApi"
 import { StoriesModal } from "./modals/StoriesModal"
 
+export type Story = {
+  isSeen: boolean;
+  // add other fields if needed
+};
+
 export function StorySection() {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [selectedStory, setSelectedStory] = useState<string | null>(null)
   const [addStoryModalOpen, setAddStoryModalOpen] = useState(false)
 
   const { data: stories, isLoading, refetch } = useGetStoriesQuery(undefined)
@@ -60,6 +63,9 @@ export function StorySection() {
       console.error("Failed to mark story as seen:", error)
     }
   }
+  if(isLoading || myStoryLoading) {
+    return <p>Story Loading</p>
+  }
 
   return (
     <>
@@ -73,7 +79,7 @@ export function StorySection() {
                   <div
                     className={`w-12 h-12 lg:w-16 lg:h-16 rounded-full p-[2px] cursor-pointer ${
                       myStories?.stories?.length > 0
-                        ? myStories?.stories?.every((story) => story?.isSeen)
+                        ? myStories?.stories?.every((story: Story) => story?.isSeen)
                           ? "bg-gray-300"
                           : "bg-gradient-to-br from-amber-300 to-amber-500"
                         : ""

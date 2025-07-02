@@ -7,9 +7,7 @@ import type { Post } from "@/types/post"
 import { useGetHomeFeedQuery } from "@/services/postApi"
 
 export function HomePage() {
-  const [page, setPage] = useState(1)
   const [allPosts, setAllPosts] = useState<Post[]>([])
-  const [hasMore, setHasMore] = useState(true)
   const loaderRef = useRef<HTMLDivElement>(null)
 
   const { isError, isLoading, data, isFetching } = useGetHomeFeedQuery({ page: 1, limit: 5 })
@@ -33,24 +31,10 @@ export function HomePage() {
       }))
 
       setAllPosts((prev) => [...prev, ...newPosts])
-      setHasMore(data.hasMore)
     }
   }, [data])
 
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && hasMore && !isFetching) {
-        setPage((prev) => prev + 1)
-      }
-    })
 
-    const node = loaderRef.current
-    if (node) observer.observe(node)
-
-    return () => {
-      if (node) observer.unobserve(node)
-    }
-  }, [hasMore, isFetching])
 
   if (isLoading) {
     return (

@@ -30,7 +30,7 @@ export function ProfileEditPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [croppedImage, setCroppedImage] = useState<File | null>(null)
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch()
   const {data: profile, isLoading} = useGetProfileDetailsQuery(userId)
@@ -137,7 +137,6 @@ export function ProfileEditPage() {
 
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert(`Error: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -149,6 +148,10 @@ export function ProfileEditPage() {
     }
     return profile?.profilePicture || "/placeholder.svg";
   };
+
+  if(isLoading) {
+    return <p>Loading</p>
+  }
 
   return (
     <div className="container max-w-4xl py-2 mx-auto">

@@ -5,6 +5,7 @@ import { PasswordStrength } from "@/components/PasswordStrength";
 import { User, Lock, EyeOff, Eye, Mail, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useRegisterMutation } from "@/services/authApi";
+import { ApiError } from "@/types/error";
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -89,13 +90,17 @@ export const RegisterPage: React.FC = () => {
       setFormData({ username: "", email: "", password: "" }); // Reset form
       setErrors({});
       setTouched({});
-    } catch (err: any) {
-      console.log(err)
-      const fieldErrors = err?.data?.fields;
-      if(fieldErrors) {
-        setErrors(fieldErrors)
-      } 
-    }
+    } catch (err: unknown) {
+  console.log(err);
+
+  // Narrow it safely:
+  const apiErr = err as ApiError;
+
+  const fieldErrors = apiErr?.data?.fields;
+  if (fieldErrors) {
+    setErrors(fieldErrors);
+  }
+}
   };
 
   const togglePasswordVisibility = () => setShowPassword((v) => !v);

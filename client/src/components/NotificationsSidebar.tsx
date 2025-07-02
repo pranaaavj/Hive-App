@@ -1,5 +1,3 @@
-"use client";
-
 import { X, Bell, Heart, MessageCircle, UserPlus, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -45,7 +43,6 @@ export function NotificationsSidebar({
     refetch,
   } = useNotificationsQuery(undefined, { skip: !isOpen });
   const [followUser] = useFollowUserMutation();
-  const [followingUsers, setFollowingUsers] = useState<Set<string>>(new Set());
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
 

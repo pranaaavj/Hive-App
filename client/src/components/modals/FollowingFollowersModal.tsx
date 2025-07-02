@@ -1,4 +1,4 @@
-import { Loader2, UserMinus, UserPlus, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { ScrollArea } from "../ui/scroll-area";
@@ -9,6 +9,12 @@ import {
   useGetFollowersQuery,
 } from "@/services/authApi";
 import { useNavigate } from "react-router-dom";
+
+interface User {
+  _id: string,
+  username: string,
+  profilePicture: string
+}
 
 interface FollowingFollowersModalProps {
   isOpen: boolean;
@@ -78,7 +84,7 @@ export function FollowingFollowersModal({
             <p>No {type} yet</p>
           </div>
         ) : (
-          users?.map((user) => (
+          users?.map((user: User) => (
             <div
               key={user?._id}
               className="flex items-center justify-between"

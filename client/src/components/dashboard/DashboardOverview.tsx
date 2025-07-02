@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, MessageSquare, TrendingUp, AlertTriangle, Eye } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,PieChart, Pie, Cell } from "recharts";
 
 const statsData = [
   { title: "Total Users", value: "24,847", change: "+12%", icon: Users, color: "text-blue-600" },
@@ -95,7 +95,7 @@ export const DashboardOverview = () => {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent}) => `${name} ${(percent as number * 100).toFixed(0)}%`}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />

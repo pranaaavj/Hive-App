@@ -47,7 +47,7 @@ export const ReplyInput = ({ parentCommentId, postId }: ReplyInputProps) => {
             onChange={(e) => setReplyText(e.target.value)}
             placeholder="Write a reply..."
             disabled={isLoading}
-            size="sm"/>
+            size={20}/>
           <Button
             size="sm"
             onClick={handleReplySubmit}

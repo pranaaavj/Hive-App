@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/redux/slices/userSlice";
+import { ApiError } from "@/types/error";
 
 export const LoginPage: React.FC = () => {
 
@@ -18,7 +19,7 @@ export const LoginPage: React.FC = () => {
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [login, { isLoading, isError, error }] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
   const validateField = (name: keyof LoginFormData, value: string): string => {
     switch (name) {
@@ -101,10 +102,11 @@ export const LoginPage: React.FC = () => {
         localStorage.setItem('accessToken',res.accessToken)
         navigate("/home")
     
-      } catch (err: any) {
-        const message = err?.data?.error || "Login failed. Please try again.";
-        setErrors({ identifier: message });
-      }
+      } catch (err) {
+  const apiErr = err as ApiError;
+  const message = apiErr.data?.error || "Login failed. Please try again.";
+  setErrors({ identifier: message });
+}
     }
   };
 
