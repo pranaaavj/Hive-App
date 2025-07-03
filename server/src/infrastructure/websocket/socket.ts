@@ -74,6 +74,8 @@ export function setupWebSocket(httpServer: any): Server {
 
   const allowedOrigins = [
     process.env.CLIENT_URL,
+    'https://www.hiveapp.work',
+  'https://hiveapp.work',
     'http://localhost:5173',
     'http://frontend:5173'
     

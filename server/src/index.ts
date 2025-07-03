@@ -20,9 +20,10 @@ app.use(morgan('dev'));
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
-  'http://frontend:5173'
+  'https://www.hiveapp.work',
+  'https://hiveapp.work',
+  'http://localhost:5173'
 ].filter(Boolean) as string[];
-
 app.use(cors({ 
   origin: allowedOrigins,
   credentials: true 
