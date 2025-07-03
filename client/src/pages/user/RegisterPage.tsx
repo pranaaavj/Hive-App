@@ -130,7 +130,7 @@ export const RegisterPage: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="w-[350px] bg-white border border-gray-200 rounded p-8 space-y-6">
         <div className="text-center">
-          <img src="/logo/hive-logo.png" alt="Hive Logo" className="mx-auto w-24" />
+          <img src="/logo/New-hive-logo.png" alt="Hive Logo" className="mx-auto w-40" />
           <p className="mt-3 font-bold text-gray-600">
             Connect with friends and discover moments you love.
           </p>

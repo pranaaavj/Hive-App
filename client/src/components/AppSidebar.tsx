@@ -169,7 +169,7 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
         {!isMinimalMode && (
           <SidebarHeader className="p-4">
             <div className="flex justify-center items-center gap-3 px-2 mb-4">
-              <img className="h-24 self-center" src="/logo/hive-logo.png" alt="Hive Logo" />
+              <img className="h-28 self-center" src="/logo/New-hive-logo.png" alt="Hive Logo" />
             </div>
             <div className="relative mt-2 flex flex-col" ref={searchRef}>
               <div className="relative">
@@ -236,7 +236,7 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
         {isMinimalMode && (
           <SidebarHeader className="p-4 flex justify-center">
             <div className="flex justify-center items-center">
-              <img className="h-12 w-12 object-contain" src="/logo/hive-logo.png" alt="Hive Logo" />
+              <img className="h-15 w-15 object-contain" src="/logo/New-hive-logo.png" alt="Hive Logo" />
             </div>
           </SidebarHeader>
         )}

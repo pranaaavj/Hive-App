@@ -118,7 +118,7 @@ export const LoginPage: React.FC = () => {
     <div className="flex-col flex max-h-screen w-full items-center justify-center">
       <div className="w-[350px] bg-white rounded-[2px] border-gray-400 border space-y-8 mt-8 p-8">
         <div className="text-center flex items-center flex-col">
-          <img className="w-30" src="/logo/hive-logo.png" alt="Hive Logo" />
+          <img className="w-40" src="/logo/New-hive-logo.png" alt="Hive Logo" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
