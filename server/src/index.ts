@@ -28,6 +28,9 @@ console.log('heey')
 const port = process.env.PORT || 5001
 
 app.use("/api", router)
+app.get('/', (req, res) => {
+  res.send('Hello World!');
+});
 
 
 app.use(errorHandler)
