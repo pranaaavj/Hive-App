@@ -71,9 +71,16 @@ function setupChangeStream() {
 }
 
 export function setupWebSocket(httpServer: any): Server {
-  io = new Server(httpServer, {
+
+  const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://frontend:5173'
+    
+  ].filter(Boolean) as string[];
+    const io = new Server(httpServer, {
     cors: {
-      origin: ['http://localhost:5173', 'http://frontend:5173'],
+      origin: allowedOrigins,
       credentials: true,
     },
   });

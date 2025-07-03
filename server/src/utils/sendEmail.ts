@@ -35,10 +35,11 @@ export const sendVerificationEmail = async (
   token: string,
   purpose: string,
 ): Promise<void> => {
+  const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5001'
   const link =
-    purpose == 'register'
-      ? `http://localhost:5001/api/auth/verify-email/${token}`
-      : `http://localhost:5001/api/auth/verify-forgot-email/${token}`;
+  purpose === 'register'
+    ? `${API_BASE_URL}/api/auth/verify-email/${token}`
+    : `${API_BASE_URL}/api/auth/verify-forgot-email/${token}`;
   const html = `
   <h2>Email Verification</h2>
   <p>Click the button below to verify your email:</p>

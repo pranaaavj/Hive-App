@@ -17,8 +17,14 @@ const app = express();
 const httpServer = createServer(app);
 setupWebSocket(httpServer);
 app.use(morgan('dev')); 
+
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://frontend:5173'
+].filter(Boolean) as string[];
+
 app.use(cors({ 
-  origin: ['http://localhost:5173', 'http://frontend:5173'], 
+  origin: allowedOrigins,
   credentials: true 
 }));
 app.use(express.json());
