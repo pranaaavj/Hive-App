@@ -12,7 +12,6 @@ import { router } from './api/user/userRoutes/routes';
 
 
 dotenv.config();
-
 const app = express();
 const httpServer = createServer(app);
 setupWebSocket(httpServer);
@@ -44,6 +43,7 @@ const startServer = async () => {
     await connectDB();
     
     httpServer.listen(port, '0.0.0.0', () => {
+    
   console.log(`🚀 Server running at http://0.0.0.0:${port}`);
 });
 

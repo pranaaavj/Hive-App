@@ -9,7 +9,6 @@ import { useGetHomeFeedQuery } from "@/services/postApi"
 export function HomePage() {
   const [allPosts, setAllPosts] = useState<Post[]>([])
   const loaderRef = useRef<HTMLDivElement>(null)
-
   const { isError, isLoading, data, isFetching } = useGetHomeFeedQuery({ page: 1, limit: 5 })
 
   useEffect(() => {
@@ -29,12 +28,9 @@ export function HomePage() {
         timestamp: new Date(post.createdAt).toLocaleString(),
         comments: [],
       }))
-
       setAllPosts((prev) => [...prev, ...newPosts])
     }
   }, [data])
-
-
 
   if (isLoading) {
     return (

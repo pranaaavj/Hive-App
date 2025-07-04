@@ -77,10 +77,8 @@ export function setupWebSocket(httpServer: any): Server {
     'https://www.hiveapp.work',
   'https://hiveapp.work',
     'http://localhost:5173',
-    'http://frontend:5173'
-    
   ].filter(Boolean) as string[];
-    const io = new Server(httpServer, {
+    io = new Server(httpServer, {
     cors: {
       origin: allowedOrigins,
       credentials: true,

@@ -176,8 +176,8 @@ export const LoginPage: React.FC = () => {
           </Link>
         </form>
       </div>
-      <div className="w-[350px] bg-white rounded-[2px] border-gray-400 border space-y-8 mt-3 p-4">
-        <div>
+      <div className="w-[350px]  bg-white rounded-[2px] border-gray-400 border space-y-8 mt-3 p-4">
+        <div className="flex flex-col items-center">
           <p>Don' have an account ?</p>
           <Link
             className="text-blue-500 font-bold hover:underline"

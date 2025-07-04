@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate, useLocation } from "react-router-dom"
-import { Home, Compass, Bell, Send, PlusSquare, User, BookmarkIcon, Settings, LogOut, Search, X } from "lucide-react"
+import { Home, Bell, Send, PlusSquare, User, BookmarkIcon, Settings, LogOut, Search, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Sidebar,
@@ -15,6 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { NotificationsSidebar } from "./NotificationsSidebar"
+import { MobileSearchModal } from "./modals/MobileSearchModal"
 import { useSearchUsersQuery } from "@/services/authApi"
 import { useAppSelector } from "@/hooks/reduxHooks"
 import { useLogoutUserMutation } from "@/services/authApi"
@@ -28,13 +29,13 @@ interface AppSidebarProps {
   minimalMode?: boolean
   isMobile?: boolean
 }
+
 interface SearchUser {
-    _id: string;
-    username: string;
-    profilePicture?: string;
-    followers: number;
-  }
-  
+  _id: string
+  username: string
+  profilePicture?: string
+  followers: number
+}
 
 const MINIMAL_MODE_PAGES = ["/create", "/messages", "/settings", "/edit-profile"]
 
@@ -44,6 +45,7 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
   const location = useLocation()
   const userId = useAppSelector((state) => state.user.user?.id)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [showResults, setShowResults] = useState(false)
@@ -75,6 +77,7 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
         setShowResults(false)
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside)
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
@@ -84,6 +87,10 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
   const toggleNotifications = (e: React.MouseEvent) => {
     e.preventDefault()
     setNotificationsOpen(!notificationsOpen)
+  }
+
+  const handleNotificationsClose = () => {
+    setNotificationsOpen(false)
   }
 
   const handleLogout = async () => {
@@ -101,56 +108,90 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
   if (isMobile) {
     return (
       <>
-        <NotificationsSidebar isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+        <NotificationsSidebar isOpen={notificationsOpen} onClose={handleNotificationsClose} />
+        <MobileSearchModal
+          isOpen={mobileSearchOpen}
+          onClose={() => setMobileSearchOpen(false)}
+          users={users}
+          isLoading={isLoading}
+          query={query}
+          setQuery={setQuery}
+          navigate={navigate}
+        />
+        {/* Mobile Bottom Navigation Bar */}
+        <div className="bg-white border-t border-gray-200 shadow-lg">
+          <div className="flex items-center justify-around py-2 px-2 max-w-md mx-auto">
+            {/* Home */}
+            <Link
+              to="/home"
+              className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
+                location.pathname === "/home"
+                  ? "bg-amber-50 text-amber-600"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+              }`}
+            >
+              <Home className="h-6 w-6 mb-1" />
+              <span className="text-xs font-medium">Home</span>
+            </Link>
 
-        <div className="flex items-center justify-around py-2 px-4 bg-white w-full">
-          <Link
-            to="/home"
-            className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Home className="h-6 w-6 text-gray-700" />
-          </Link>
+            {/* Search */}
+            <button
+              onClick={() => setMobileSearchOpen(true)}
+              className="flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+            >
+              <Search className="h-6 w-6 mb-1" />
+              <span className="text-xs font-medium">Search</span>
+            </button>
 
-          <Link
-            to="/explore"
-            className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Compass className="h-6 w-6 text-gray-700" />
-          </Link>
+            {/* Create */}
+            <button
+              onClick={onCreateClick}
+              className="flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+            >
+              <PlusSquare className="h-6 w-6 mb-1" />
+              <span className="text-xs font-medium">Create</span>
+            </button>
 
-          <button
-            onClick={onCreateClick}
-            className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <PlusSquare className="h-6 w-6 text-gray-700" />
-          </button>
+            {/* Notifications */}
+            <button
+              onClick={toggleNotifications}
+              className="flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+            >
+              <Bell className="h-6 w-6 mb-1" />
+              <span className="text-xs font-medium">Alerts</span>
+            </button>
 
-          <button
-            onClick={toggleNotifications}
-            className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-          >
-            <Bell className="h-6 w-6 text-gray-700" />
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
-              3
-            </span>
-          </button>
+            {/* Messages */}
+            <Link
+              to="/messages"
+              className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
+                location.pathname.startsWith("/messages")
+                  ? "bg-amber-50 text-amber-600"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+              }`}
+            >
+              <Send className="h-6 w-6 mb-1" />
+              <span className="text-xs font-medium">Messages</span>
+            </Link>
 
-          <Link
-            to="/messages"
-            className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Send className="h-6 w-6 text-gray-700" />
-          </Link>
-
-          <Link
-            to={`/profile/${userId}`}
-            className="flex flex-col items-center justify-center p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <Avatar className="h-6 w-6 border border-gray-300">
-              <AvatarImage src={userDetails?.profilePicture || "/placeholder.svg"} alt={userDetails?.username} />
-              <AvatarFallback className="text-xs">{userDetails?.username?.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </Link>
+            {/* Profile */}
+            <Link
+              to={`/profile/${userId}`}
+              className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
+                location.pathname === `/profile/${userId}`
+                  ? "bg-amber-50 text-amber-600"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+              }`}
+            >
+              <div className="relative mb-1">
+                <Avatar className="h-6 w-6 border-2 border-current">
+                  <AvatarImage src={userDetails?.profilePicture || "/placeholder.svg"} alt={userDetails?.username} />
+                  <AvatarFallback className="text-xs">{userDetails?.username?.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </div>
+              <span className="text-xs font-medium">Profile</span>
+            </Link>
+          </div>
         </div>
       </>
     )
@@ -159,8 +200,7 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
   // Desktop Sidebar
   return (
     <>
-      <NotificationsSidebar isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-
+      <NotificationsSidebar isOpen={notificationsOpen} onClose={handleNotificationsClose} />
       <Sidebar
         variant="sidebar"
         collapsible="icon"
@@ -265,26 +305,6 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
 
             <SidebarMenuItem>
               <SidebarMenuButton
-                asChild
-                tooltip="Explore"
-                className={`${
-                  isMinimalMode
-                    ? "h-14 w-14 mx-auto flex items-center justify-center rounded-xl hover:bg-amber-50 transition-colors"
-                    : "py-3 text-sm"
-                }`}
-              >
-                <Link
-                  to="/explore"
-                  className={`flex items-center gap-3 font-medium ${isMinimalMode ? "justify-center" : ""}`}
-                >
-                  <Compass className={isMinimalMode ? "h-6 w-6" : "h-5 w-5"} />
-                  {!isMinimalMode && <span>Explore</span>}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton
                 tooltip="Notifications"
                 className={`${
                   isMinimalMode
@@ -295,18 +315,11 @@ export function AppSidebar({ onCreateClick, minimalMode, isMobile = false }: App
               >
                 <div
                   className={`flex items-center gap-3 font-medium cursor-pointer ${
-                    isMinimalMode ? "justify-center relative" : ""
+                    isMinimalMode ? "justify-center" : ""
                   }`}
                 >
                   <Bell className={isMinimalMode ? "h-6 w-6" : "h-5 w-5"} />
                   {!isMinimalMode && <span>Notifications</span>}
-                  <span
-                    className={`${
-                      isMinimalMode ? "absolute -top-2 -right-2" : "ml-auto"
-                    } flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-medium text-white`}
-                  >
-                    3
-                  </span>
                 </div>
               </SidebarMenuButton>
             </SidebarMenuItem>

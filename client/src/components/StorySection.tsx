@@ -9,16 +9,14 @@ import { useGetStoriesQuery, useMarkStorySeenMutation, useMyStoriesQuery } from 
 import { StoriesModal } from "./modals/StoriesModal"
 
 export type Story = {
-  isSeen: boolean;
+  isSeen: boolean
   // add other fields if needed
-};
+}
 
 export function StorySection() {
   const [addStoryModalOpen, setAddStoryModalOpen] = useState(false)
-
   const { data: stories, isLoading, refetch } = useGetStoriesQuery(undefined)
   const { data: myStories, isLoading: myStoryLoading, refetch: refetchMyStories } = useMyStoriesQuery(undefined)
-
   const [isStoriesOpen, setIsStoriesOpen] = useState(false)
   const [userIndex, setUserIndex] = useState(0)
   const [markStorySeen] = useMarkStorySeenMutation()
@@ -34,7 +32,6 @@ export function StorySection() {
 
   const combinedStories = useMemo(() => {
     if (!myStories || !stories) return []
-
     return [
       {
         userId: myStories.userId,
@@ -63,8 +60,17 @@ export function StorySection() {
       console.error("Failed to mark story as seen:", error)
     }
   }
-  if(isLoading || myStoryLoading) {
-    return <p>Story Loading</p>
+
+  if (isLoading || myStoryLoading) {
+    return (
+      <section className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-3 lg:p-4">
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+          </div>
+        </div>
+      </section>
+    )
   }
 
   return (
@@ -131,7 +137,6 @@ export function StorySection() {
       </section>
 
       <AddStoryModal isOpen={addStoryModalOpen} setIsOpen={setAddStoryModalOpen} />
-
       {stories && (
         <StoriesModal
           isOpen={isStoriesOpen}

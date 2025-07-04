@@ -21,7 +21,6 @@ export async function  createAndEmitNotification({
 }: CreateNotificationInput) {
 
     const io = getIO()
-
     const newMongo = new MongoNotificationRepository()
     const notification = await newMongo.createNotification({userId, fromUser, type, postId, message,postImage})
 

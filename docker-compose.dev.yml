@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   frontend:
     build:
@@ -20,7 +22,7 @@ services:
   backend:
     build:
       context: ./server
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: hive-app-backend
     ports:
       - "5001:5001"
@@ -73,7 +75,7 @@ services:
       - hive-network
 
   redis:
-    image: redis:latest   # ✅ Fixed here!
+    image: redis:latest
     container_name: hive-app-redis
     ports:
       - "6379:6379"
