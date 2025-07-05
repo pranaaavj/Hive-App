@@ -238,7 +238,7 @@ export default function MessagesPage() {
 
   const filteredChats =
     userChats?.filter((chat: ChatPreview) =>
-      chat.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase())
+      chat?.otherUser?.username?.toLowerCase()?.includes(searchQuery?.toLowerCase())
     ) || [];
 
   // Handle sending messages for both new chat and existing chat
@@ -393,7 +393,7 @@ export default function MessagesPage() {
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
+    return date?.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
@@ -411,7 +411,7 @@ export default function MessagesPage() {
     } else if (date.toDateString() === yesterday.toDateString()) {
       return "Yesterday";
     } else {
-      return date.toLocaleDateString("en-US", {
+      return date?.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year:

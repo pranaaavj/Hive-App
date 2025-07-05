@@ -14,18 +14,18 @@ export function HomePage() {
   useEffect(() => {
     if (data) {
       const newPosts = data.posts.map((post) => ({
-        _id: post._id,
-        userId: post.userId,
+        _id: post?._id,
+        userId: post?.userId,
         user: {
-          username: post.user.username,
-          profilePicture: post.user.profilePicture || "/placeholder.svg",
+          username: post?.user?.username,
+          profilePicture: post?.user?.profilePicture || "/placeholder.svg",
         },
-        image: post.imageUrls[0] || "/placeholder.svg",
-        caption: post.caption || "",
-        likeCount: post.likeCount,
-        likes: post.likes,
-        commentCount: post.commentCount,
-        timestamp: new Date(post.createdAt).toLocaleString(),
+        image: post?.imageUrls?.[0] || "/placeholder.svg",
+        caption: post?.caption || "",
+        likeCount: post?.likeCount,
+        likes: post?.likes,
+        commentCount: post?.commentCount,
+        timestamp: new Date(post?.createdAt)?.toLocaleString(),
         comments: [],
       }))
       setAllPosts((prev) => [...prev, ...newPosts])

@@ -27,22 +27,22 @@ export function PostCard({ post }: PostCardProps) {
 
   useEffect(() => {
     if (currentUserId) {
-      setIsLiked(post.likes.includes(currentUserId))
+      setIsLiked(post?.likes?.includes(currentUserId))
     }
-  }, [currentUserId, post.likes])
+  }, [currentUserId, post?.likes])
 
   useEffect(() => {
-    setLikeCount(post.likeCount)
+    setLikeCount(post?.likeCount)
   }, [post.likeCount])
 
   const handleLike = async () => {
     try {
       if (isLiked) {
-        await unlikePost(post._id)
+        await unlikePost(post?._id)
         setIsLiked(false)
         setLikeCount((prev) => prev - 1)
       } else {
-        await likePost({ postId: post._id })
+        await likePost({ postId: post?._id })
         setIsLiked(true)
         setLikeCount((prev) => prev + 1)
       }
@@ -54,16 +54,16 @@ export function PostCard({ post }: PostCardProps) {
   return (
     <Card className="w-full max-w-lg mx-auto overflow-hidden shadow-sm bg-white border border-gray-100">
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4">
-        <div onClick={() => navigate(`/profile/${post.userId}`)} className="flex items-center gap-3 cursor-pointer">
+        <div onClick={() => navigate(`/profile/${post?.userId}`)} className="flex items-center gap-3 cursor-pointer">
           <Avatar className="w-8 h-8 lg:w-10 lg:h-10 border-2 border-amber-200">
-            <AvatarImage src={post.user.profilePicture || "/placeholder.svg"} alt={post.user.username} />
+            <AvatarImage src={post?.user?.profilePicture || "/placeholder.svg"} alt={post?.user?.username} />
             <AvatarFallback className="text-xs lg:text-sm">
-              {post.user.username.substring(0, 2).toUpperCase()}
+              {post?.user?.username?.substring(0, 2)?.toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div>
-            <span className="font-semibold text-sm lg:text-base">{post.user.username}</span>
-            <p className="text-xs text-gray-500">{post.timestamp}</p>
+            <span className="font-semibold text-sm lg:text-base">{post?.user?.username}</span>
+            <p className="text-xs text-gray-500">{post?.timestamp}</p>
           </div>
         </div>
         <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
@@ -73,7 +73,7 @@ export function PostCard({ post }: PostCardProps) {
 
       <CardContent className="p-0">
         <div className="w-full aspect-square">
-          <img src={post.image || "/placeholder.svg"} alt="Post" className="object-cover w-full h-full" />
+          <img src={post?.image || "/placeholder.svg"} alt="Post" className="object-cover w-full h-full" />
         </div>
       </CardContent>
 
@@ -103,8 +103,8 @@ export function PostCard({ post }: PostCardProps) {
 
         <div className="w-full">
           <p className="text-sm lg:text-base">
-            <span className="font-semibold">{post.user.username}</span>{" "}
-            <span className="break-words">{post.caption}</span>
+            <span className="font-semibold">{post?.user?.username}</span>{" "}
+            <span className="break-words">{post?.caption}</span>
           </p>
         </div>
       </CardFooter>
