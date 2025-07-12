@@ -11,13 +11,16 @@ export class HomeService {
     private storyRepository: StoryRepository,
   ) {}
 
-    async getHomeFeed(userId:string,page:number,limit:number):Promise<{posts:IPostModel[];hasMore:boolean}>{
-        try {
-            return this.postRepository.findUserPost(userId,page,limit)
-        } catch (error) {
-            throw new ApiError('Error fetching Home Feed',500)
-        }
-
+  async getHomeFeed(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ posts: IPostModel[]; hasMore: boolean }> {
+    try {
+      return this.postRepository.findUserPost(userId, page, limit);
+    } catch (error) {
+      throw new ApiError('Error fetching Home Feed', 500);
+    }
   }
   async addStory(userId: string, fileUrl: string, fileType: string): Promise<IStory | null> {
     try {
@@ -37,33 +40,31 @@ export class HomeService {
       throw new ApiError('Error creating story', 500);
     }
   }
-  async getStories(userId: string) : Promise<any | null> {
-    const stories = await this.storyRepository.getStories(userId)
+  async getStories(userId: string): Promise<any | null> {
+    const stories = await this.storyRepository.getStories(userId);
 
-    return stories
+    return stories;
   }
-  async markStorySeen(userId: string, storyId: string) : Promise<any | null> {
-    const story = await this.storyRepository.findById(storyId)
-    
-    if(!story) {
-      throw new ApiError("the story not found", 404)
+  async markStorySeen(userId: string, storyId: string): Promise<any | null> {
+    const story = await this.storyRepository.findById(storyId);
+
+    if (!story) {
+      throw new ApiError('the story not found', 404);
     }
-    const alreadySeen = story.viewers.includes(userId as any)
+    const alreadySeen = story.viewers.includes(userId as any);
 
-    if(!alreadySeen) {
-      story.viewers.push(new Types.ObjectId(userId))
-        await story.save()
-      
+    if (!alreadySeen) {
+      story.viewers.push(new Types.ObjectId(userId));
+      await story.save();
     }
 
-    return {message: "story marked as seen"}
-
+    return { message: 'story marked as seen' };
   }
-  async myStory(userId: string) : Promise<any | null> {
-    const story = await this.storyRepository.getMyStories(userId)
-    if(!story) {
-      return null
+  async myStory(userId: string): Promise<any | null> {
+    const story = await this.storyRepository.getMyStories(userId);
+    if (!story) {
+      return null;
     }
-    return story
+    return story;
   }
 }

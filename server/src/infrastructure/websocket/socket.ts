@@ -5,8 +5,7 @@ import { MessageModel } from '../model/messageModel';
 
 let io: Server | null = null;
 
-export const onlineUsers = new Map<string, string>()
-
+export const onlineUsers = new Map<string, string>();
 
 function setupChangeStream() {
   const changeStream = CommentModel.watch(
@@ -71,14 +70,13 @@ function setupChangeStream() {
 }
 
 export function setupWebSocket(httpServer: any): Server {
-
   const allowedOrigins = [
     process.env.CLIENT_URL,
     'https://www.hiveapp.work',
-  'https://hiveapp.work',
+    'https://hiveapp.work',
     'http://localhost:5173',
   ].filter(Boolean) as string[];
-    io = new Server(httpServer, {
+  io = new Server(httpServer, {
     cors: {
       origin: allowedOrigins,
       credentials: true,
@@ -115,35 +113,33 @@ export function setupWebSocket(httpServer: any): Server {
       socket.broadcast.to(chatId).emit('userTyping', { chatId, senderId });
     });
 
-
     socket.on('stopTyping', ({ chatId, senderId }) => {
       socket.broadcast.to(chatId).emit('userStoppedTyping', { chatId, senderId });
     });
 
     ///for message seen - UPDATED with better error handling and logging
-    socket.on('messageSeen', async({chatId, receiverId}) => {
+    socket.on('messageSeen', async ({ chatId, receiverId }) => {
       try {
         console.log(`👁️ Marking messages as seen in chat: ${chatId} by user: ${receiverId}`);
-        
+
         const result = await MessageModel.updateMany(
           {
             chatId,
             sender: { $ne: receiverId },
-            isSeen: false
+            isSeen: false,
           },
-          { $set: { isSeen: true } }
+          { $set: { isSeen: true } },
         );
 
         console.log(`✅ Marked ${result.modifiedCount} messages as seen`);
-        
+
         // Broadcast to all users in the chat that messages have been seen
         if (result.modifiedCount > 0) {
-  io?.to(chatId).emit('messageSeen', { chatId, seenBy: receiverId });
-}
-
+          io?.to(chatId).emit('messageSeen', { chatId, seenBy: receiverId });
+        }
       } catch (error) {
-         console.error('❌ Error marking messages as seen:', error);
-         socket.emit('error', 'Failed to mark messages as seen');
+        console.error('❌ Error marking messages as seen:', error);
+        socket.emit('error', 'Failed to mark messages as seen');
       }
     });
 
@@ -158,7 +154,7 @@ export function setupWebSocket(httpServer: any): Server {
         profilePic: messageData.profilePic,
         username: messageData.username,
         text: messageData.text,
-        type:messageData.type,
+        type: messageData.type,
         createdAt: messageData.createdAt,
       });
 

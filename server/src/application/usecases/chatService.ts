@@ -5,50 +5,58 @@ import { ChatRepository } from '../repositories/chatRepository';
 import { MessageRepository } from '../repositories/messageRepository';
 import { IChat } from '../../infrastructure/model/ChatModel';
 import { UserRepository } from '../repositories/user.repository';
-import { IPopulatedMessage, MessageModel, PaginatedMessages } from '../../infrastructure/model/messageModel';
+import {
+  IPopulatedMessage,
+  MessageModel,
+  PaginatedMessages,
+} from '../../infrastructure/model/messageModel';
 
 export class ChatService {
   constructor(
     private chatRepository: ChatRepository,
     private messageRepository: MessageRepository,
-    private userRepository: UserRepository
-    
+    private userRepository: UserRepository,
   ) {}
 
-  async sendMessage(senderId: string, receiverid: string, text: string, type: string): Promise<AddChat> {
+  async sendMessage(
+    senderId: string,
+    receiverid: string,
+    text: string,
+    type: string,
+  ): Promise<AddChat> {
     let chat = await this.chatRepository.findChatByUsers(senderId, receiverid);
 
     if (!chat) {
-        chat = await this.chatRepository.createChat([senderId, receiverid]);
-      }
-      
-      const message = await this.messageRepository.createMessage(
-        chat._id.toString(),
-        senderId,
-        text,
-        type
-      );
+      chat = await this.chatRepository.createChat([senderId, receiverid]);
+    }
 
-      const populatedMessage = await MessageModel.findById(message._id)
-      .populate('sender','profilePicture')
-      .lean() as IPopulatedMessage
+    const message = await this.messageRepository.createMessage(
+      chat._id.toString(),
+      senderId,
+      text,
+      type,
+    );
 
-      return{
-        chat,
-        message:populatedMessage,
-      }
+    const populatedMessage = (await MessageModel.findById(message._id)
+      .populate('sender', 'profilePicture')
+      .lean()) as IPopulatedMessage;
+
+    return {
+      chat,
+      message: populatedMessage,
+    };
   }
 
   async myChats(userId: string): Promise<Userchats[] | null> {
     const chats = await this.chatRepository.findChatsByUserId(userId);
-  
+
     const formattedChats = await Promise.all(
       chats.map(async (chat) => {
         const otherUserId = chat.members.find((id) => id.toString() !== userId);
-        const otherUser = await this.userRepository.findById(otherUserId?.toString() || "");
-  
+        const otherUser = await this.userRepository.findById(otherUserId?.toString() || '');
+
         const lastMessage = await this.messageRepository.findLastMessage(chat._id?.toString());
-  
+
         return {
           _id: chat._id.toString(),
           otherUser: {
@@ -60,21 +68,23 @@ export class ChatService {
           lastMessage: lastMessage || null,
           updatedAt: chat.updatedAt!,
         };
-      })
+      }),
     );
-  
+
     return formattedChats;
   }
 
-  async getMessagesByChatId(chatId:string,page:number,limit:number) : Promise<PaginatedMessages>{
-     return await this.messageRepository.findMessagesByChatId(chatId,page,limit)
+  async getMessagesByChatId(
+    chatId: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedMessages> {
+    return await this.messageRepository.findMessagesByChatId(chatId, page, limit);
   }
-  async findChatByUserId(userId: string) : Promise<Userchats | null> {
-    
-    const chat = await this.chatRepository.findChatByUserId(userId)
-    const user = await this.userRepository.findById(userId.toString() || "")
-    const lastMessage = await this.messageRepository.findLastMessage(chat?._id.toString() || "")
-    
+  async findChatByUserId(userId: string): Promise<Userchats | null> {
+    const chat = await this.chatRepository.findChatByUserId(userId);
+    const user = await this.userRepository.findById(userId.toString() || '');
+    const lastMessage = await this.messageRepository.findLastMessage(chat?._id.toString() || '');
 
     const formattedChat = {
       _id: chat?._id.toString(),
@@ -83,14 +93,11 @@ export class ChatService {
         username: user?.username,
         profilePic: user?.profilePicture,
         isOnline: user?.isOnline,
-        
       },
       lastMessage: lastMessage,
-      updatedAt: chat?.updatedAt
+      updatedAt: chat?.updatedAt,
+    };
 
-    }
-
-    return formattedChat as Userchats | null
+    return formattedChat as Userchats | null;
   }
-  
 }

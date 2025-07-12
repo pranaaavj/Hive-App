@@ -10,42 +10,42 @@ import { errorHandler } from './middleware/error.middleware';
 import { connectDB, disconnectDB } from './infrastructure/db/connect';
 import { router } from './api/user/userRoutes/routes';
 
-
 dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 setupWebSocket(httpServer);
-app.use(morgan('dev')); 
+app.use(morgan('dev'));
 
 const allowedOrigins = [
   process.env.CLIENT_URL,
   'https://www.hiveapp.work',
   'https://hiveapp.work',
-  'http://localhost:5173'
+  'http://localhost:5173',
 ].filter(Boolean) as string[];
-app.use(cors({ 
-  origin: allowedOrigins,
-  credentials: true 
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
 
-console.log('heey')
-const port = Number(process.env.PORT || 5001)
+console.log('heey');
+const port = Number(process.env.PORT || 5001);
 
-app.use("/api", router)
+app.use('/api', router);
 
-app.use(errorHandler)
+app.use(errorHandler);
 
 const startServer = async () => {
   try {
     // 🧠 Connect DB first
     await connectDB();
-    
+
     httpServer.listen(port, '0.0.0.0', () => {
-    
-  console.log(`🚀 Server running at http://0.0.0.0:${port}`);
-});
+      console.log(`🚀 Server running at http://0.0.0.0:${port}`);
+    });
 
     // Graceful shutdown
     process.on('SIGTERM', () => {

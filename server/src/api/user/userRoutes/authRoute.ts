@@ -1,8 +1,6 @@
-
 import { Router } from 'express';
-import { UserController } from '../userControllers/authController'; 
+import { UserController } from '../userControllers/authController';
 import rateLimit from 'express-rate-limit';
-
 
 export function setupUserRoutes(userController: UserController): Router {
   const router = Router();
@@ -22,13 +20,12 @@ export function setupUserRoutes(userController: UserController): Router {
   //   max: 5, // 5 forgot password requests per minute per IP
   // });
 
-  
-router.post('/register', userController.register.bind(userController));
+  router.post('/register', userController.register.bind(userController));
   router.post('/login', userController.login.bind(userController)); // Add .bind(userController)
   router.post('/logout', userController.logout.bind(userController)); // Bind logout as well
   router.get('/verify-email/:token', userController.verifyEmail.bind(userController));
   router.get('/refresh-token', userController.refreshToken.bind(userController)); // Bind refreshToken
-  router.post('/forgot-password',  userController.forgotPassword.bind(userController)); // Bind forgotPassword
+  router.post('/forgot-password', userController.forgotPassword.bind(userController)); // Bind forgotPassword
   router.get('/verify-forgot-email/:token', userController.forgotVerifyEmail.bind(userController)); // Bind forgotVerifyEmail
   router.post('/reset-password', userController.resetPassword.bind(userController)); // Bind resetPassword
   return router;

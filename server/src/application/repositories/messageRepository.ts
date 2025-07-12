@@ -1,12 +1,16 @@
 import { Types } from 'mongoose';
 import { RedisClient } from '../../infrastructure/cache/redis';
-import { IFormattedMessage, IMessage, MessageModel, PaginatedMessages } from '../../infrastructure/model/messageModel';
+import {
+  IFormattedMessage,
+  IMessage,
+  MessageModel,
+  PaginatedMessages,
+} from '../../infrastructure/model/messageModel';
 
 export interface MessageRepository {
   createMessage(chatId: string, senderId: string, text: string, type: string): Promise<IMessage>;
   findLastMessage(chatId: string): Promise<IMessage | null>;
   findMessagesByChatId(chatId: string, page: number, limit: number): Promise<PaginatedMessages>;
-  
 }
 
 export class MongoMessageRepository implements MessageRepository {
@@ -15,17 +19,25 @@ export class MongoMessageRepository implements MessageRepository {
   constructor() {
     this.redis = new RedisClient();
   }
-  async createMessage(chatId: string, senderId: string, text: string, type: string): Promise<IMessage> {
+
+  async createMessage(
+    chatId: string,
+    senderId: string,
+    text: string,
+    type: string,
+  ): Promise<IMessage> {
     return await MessageModel.create({
       chatId,
       sender: senderId,
       text,
-      type
+      type,
     });
   }
+
   async findLastMessage(chatId: string): Promise<IMessage | null> {
     return await MessageModel.findOne({ chatId }).sort({ createdAt: -1 });
   }
+
   async findMessagesByChatId(
     chatId: string,
     page: number,
@@ -33,25 +45,25 @@ export class MongoMessageRepository implements MessageRepository {
   ): Promise<PaginatedMessages> {
     const skip = page * limit;
 
-    const rawMessages  = await MessageModel.find({ chatId })
+    const rawMessages = await MessageModel.find({ chatId })
       .sort({ createdAt: 1 })
       // .skip(skip)
       // .limit(limit)
-      .populate("sender", "_id profilePicture username")
+      .populate('sender', '_id profilePicture username');
 
-      console.log('profile pic',rawMessages)
+    console.log('profile pic', rawMessages);
 
-      const messages:IFormattedMessage[] = rawMessages.map((msg)=>({
-        messageId:msg._id.toString(),
-        senderId: msg.sender._id,
-        profilePic:  (msg.sender as any).profilePicture,
-        username: (msg.sender as any).username,
- 
-        text:msg.text,
-        isSeen:msg.isSeen,
-        type: msg.type,
-        createdAt: msg.createdAt!, 
-      }))
+    const messages: IFormattedMessage[] = rawMessages.map((msg) => ({
+      messageId: msg._id.toString(),
+      senderId: msg.sender._id,
+      profilePic: (msg.sender as any).profilePicture,
+      username: (msg.sender as any).username,
+
+      text: msg.text,
+      isSeen: msg.isSeen,
+      type: msg.type,
+      createdAt: msg.createdAt!,
+    }));
 
     const totalCount = await MessageModel.countDocuments({ chatId });
 

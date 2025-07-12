@@ -9,8 +9,7 @@ import {
   chatController,
   notificationController,
   adminController,
-  adminUserManagementController
-
+  adminUserManagementController,
 } from '../../../setup';
 import { setupPostRoutes } from './postRoute';
 import { setupCommentRoutes } from './commentRoutes';
@@ -29,10 +28,10 @@ router.use('/profile', setupProfileRoutes(profileController));
 router.use('/post', setupPostRoutes(postController));
 router.use('/comments', setupCommentRoutes(commentController));
 router.use('/home', setUpHomeRoutes(homeController));
-router.use('/messages',setUpChatRoutes(chatController))
-router.use("/notifications", setUpNotificationRoutes(notificationController))
+router.use('/messages', setUpChatRoutes(chatController));
+router.use('/notifications', setUpNotificationRoutes(notificationController));
 
-router.use('/admin',setupAdminAuthRoutes(adminController))
-router.use('/admin',setupAdminUserManagementRoutes(adminUserManagementController))
+router.use('/admin', setupAdminAuthRoutes(adminController));
+router.use('/admin', setupAdminUserManagementRoutes(adminUserManagementController));
 
 export { router };
