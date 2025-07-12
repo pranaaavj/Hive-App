@@ -11,10 +11,9 @@ export interface ICommentModel extends Document {
 
   createdAt: Date;
   updatedAt: Date;
-  deletedAt?:Date|null
-  deletedBy?:Types.ObjectId|null
+  deletedAt?: Date | null;
+  deletedBy?: Types.ObjectId | null;
 }
-
 
 const commentSchema = new Schema<ICommentModel>(
   {
@@ -24,10 +23,10 @@ const commentSchema = new Schema<ICommentModel>(
     parentCommentId: { type: Schema.Types.ObjectId, ref: 'Comment' },
     depth: { type: Number, default: 0 },
     isDeleted: { type: Boolean, default: false },
-    deletedAt:{type:Date,default:null},
-    deletedBy:{type:Schema.Types.ObjectId,ref:'User',default:null}
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 commentSchema.index({ postId: 1, createdAt: -1 });

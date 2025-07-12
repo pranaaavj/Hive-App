@@ -33,17 +33,13 @@ export class ProfileService {
       throw new Error('User Not found or could not follow the User');
     }
 
-
-    if(followingUserId !== userId) {
-      
+    if (followingUserId !== userId) {
       await createAndEmitNotification({
         userId: new Types.ObjectId(followingUserId),
         fromUser: new Types.ObjectId(userId),
-        type: "follow",
-        message: "Started Following You",
-    })
-    
-
+        type: 'follow',
+        message: 'Started Following You',
+      });
     }
 
     return user as ProfileSummary;
@@ -58,7 +54,6 @@ export class ProfileService {
 
     if (!user) {
       throw new Error('User Not found or could not follow the User');
-
     }
 
     return user as ProfileSummary;
@@ -67,46 +62,46 @@ export class ProfileService {
     userId: string,
     updatedData: { username: string; bio: string; profilePicture: string },
   ): Promise<ProfileSummary> {
-    const userIdTaken = await this.profileRepository.findByUsername(updatedData.username)
+    const userIdTaken = await this.profileRepository.findByUsername(updatedData.username);
 
-    if(userIdTaken && userIdTaken._id.toString() !== userId) {
-        throw new ApiError("username already taken", 409)
+    if (userIdTaken && userIdTaken._id.toString() !== userId) {
+      throw new ApiError('username already taken', 409);
     }
     const updatedUser = await this.profileRepository.updateProfile(userId, updatedData);
-  if (!updatedUser) throw new Error('Failed to update profile');
+    if (!updatedUser) throw new Error('Failed to update profile');
 
-  return updatedUser
+    return updatedUser;
   }
-  async followingUsers(userId: string) : Promise<ProfileSummary[]> {
+  async followingUsers(userId: string): Promise<ProfileSummary[]> {
     try {
       const users = await this.profileRepository.findFollowingUsers(userId);
-  
+
       if (!users) {
-        throw new Error("No following users found.");
+        throw new Error('No following users found.');
       }
-  
-      return users as ProfileSummary[]
+
+      return users as ProfileSummary[];
     } catch (error: any) {
       throw new Error(`Failed to fetch following users: ${error.message || error}`);
     }
   }
 
-  async followedUsers(userId: string) : Promise<ProfileSummary[]> {
+  async followedUsers(userId: string): Promise<ProfileSummary[]> {
     try {
       const users = await this.profileRepository.findFollowedUsers(userId);
-  
+
       if (!users) {
-        throw new Error("No followed users found.");
+        throw new Error('No followed users found.');
       }
-  
-      return users as ProfileSummary[]
+
+      return users as ProfileSummary[];
     } catch (error: any) {
       throw new Error(`Failed to fetch followed users: ${error.message || error}`);
     }
   }
-  async usernameAndProfile(userId: string) : Promise<UsernameProfile | null> {
-    const usernameProfile = this.profileRepository.usernameProfile(userId)
+  async usernameAndProfile(userId: string): Promise<UsernameProfile | null> {
+    const usernameProfile = this.profileRepository.usernameProfile(userId);
 
-    return usernameProfile
+    return usernameProfile;
   }
 }

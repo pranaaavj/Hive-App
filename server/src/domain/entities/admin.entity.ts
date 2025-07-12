@@ -1,5 +1,5 @@
 export interface IAdmin {
-  id?: string; 
+  id?: string;
   adminName: string;
   email: string;
   password: string;
@@ -20,7 +20,7 @@ export class Admin {
     public isVerified: boolean = false,
     public resetPasswordToken: string | undefined,
     public createdAt: Date = new Date(),
-    public updatedAt: Date = new Date()
+    public updatedAt: Date = new Date(),
   ) {
     if (!adminName || !email || !password) {
       throw new Error('Admin name, email, and password are required');
@@ -37,7 +37,7 @@ export class Admin {
       data.isVerified ?? false,
       data.resetPasswordToken,
       data.createdAt ?? new Date(),
-      data.updatedAt ?? new Date()
+      data.updatedAt ?? new Date(),
     );
   }
 }

@@ -1,10 +1,10 @@
-import { model, Model, Schema, Types, Document } from "mongoose";
+import { model, Model, Schema, Types, Document } from 'mongoose';
 
 // Plain data interface (no Mongoose methods)
 export interface IStory {
   userId: Types.ObjectId;
   mediaUrl: string;
-  mediaType: "image" | "video";
+  mediaType: 'image' | 'video';
   createdAt: Date;
   expiresAt: Date;
   viewers: Types.ObjectId[];
@@ -17,7 +17,7 @@ const storySchema: Schema<IStoryDocument> = new Schema(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
     },
     mediaUrl: {
@@ -26,7 +26,7 @@ const storySchema: Schema<IStoryDocument> = new Schema(
     },
     mediaType: {
       type: String,
-      enum: ["image", "video"],
+      enum: ['image', 'video'],
       required: true,
     },
     createdAt: {
@@ -40,13 +40,13 @@ const storySchema: Schema<IStoryDocument> = new Schema(
     viewers: [
       {
         type: Schema.Types.ObjectId,
-        ref: "User",
+        ref: 'User',
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 storySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const StoryModel: Model<IStoryDocument> = model<IStoryDocument>("Story", storySchema);
+export const StoryModel: Model<IStoryDocument> = model<IStoryDocument>('Story', storySchema);

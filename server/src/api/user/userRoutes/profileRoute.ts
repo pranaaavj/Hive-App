@@ -6,16 +6,15 @@ export function setupProfileRoutes(profileController: ProfileControler): Router 
   const router = Router();
 
   router.post('/profile-picture', authMiddleware, profileController.updateProfilePicture);
-  router.get("/profile-details", authMiddleware, profileController.profileDetails)
-  router.get("/search-users", authMiddleware, profileController.searchUsers)
-  router.post("/follow-user", authMiddleware, profileController.followUser)
-  router.post("/unfollow-user", authMiddleware, profileController.unfollowUser)
-  router.patch("/update-profile", authMiddleware, profileController.updateProfile)
-  router.get("/following", authMiddleware, profileController.getFollowing)
-  router.get("/followers", authMiddleware, profileController.getFollowers)
-router.get("/username-profile", authMiddleware, profileController.usernameAndProfile);
-router.get("/username-profile/:userId", authMiddleware, profileController.usernameAndProfile);
-
+  router.get('/profile-details', authMiddleware, profileController.profileDetails);
+  router.get('/search-users', authMiddleware, profileController.searchUsers);
+  router.post('/follow-user', authMiddleware, profileController.followUser);
+  router.post('/unfollow-user', authMiddleware, profileController.unfollowUser);
+  router.patch('/update-profile', authMiddleware, profileController.updateProfile);
+  router.get('/following', authMiddleware, profileController.getFollowing);
+  router.get('/followers', authMiddleware, profileController.getFollowers);
+  router.get('/username-profile', authMiddleware, profileController.usernameAndProfile);
+  router.get('/username-profile/:userId', authMiddleware, profileController.usernameAndProfile);
 
   return router;
 }

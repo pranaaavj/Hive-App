@@ -79,21 +79,18 @@ export class PostService {
         throw new ApiError('Post not found or already liked', 400);
       }
 
-      const postAndUser = await this.postRepository.getUserByPost(postId)
+      const postAndUser = await this.postRepository.getUserByPost(postId);
 
-      if(postAndUser?.userId.toString() !== userId.toString()) {
-
+      if (postAndUser?.userId.toString() !== userId.toString()) {
         await createAndEmitNotification({
           userId: new Types.ObjectId(postAndUser?.userId),
           fromUser: new Types.ObjectId(userId),
           type: 'like',
           postId: new Types.ObjectId(postId),
           message: 'liked your post',
-          postImage: postAndUser?.imageUrls?.[0]
+          postImage: postAndUser?.imageUrls?.[0],
         });
       }
-
-
 
       return post;
     } catch (error) {

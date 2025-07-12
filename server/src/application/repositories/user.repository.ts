@@ -1,7 +1,7 @@
 // src/application/repositories/user.repository.ts
 import { Types } from 'mongoose';
-import { IUser,User } from '../../domain/entities/user.entity'; 
-import { UserModel,IUserModel } from '../../infrastructure/model/user.model'; 
+import { IUser, User } from '../../domain/entities/user.entity';
+import { UserModel, IUserModel } from '../../infrastructure/model/user.model';
 import { RedisClient } from '../../infrastructure/cache/redis';
 
 export interface UserRepository {
@@ -55,7 +55,6 @@ export class MongoUserRepository implements UserRepository {
     const cacheKey = `user:email:${email}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
-      
       return JSON.parse(cached);
     }
 
@@ -81,28 +80,27 @@ export class MongoUserRepository implements UserRepository {
   }
 
   // In your repository class
-async findByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
-  const cacheKey = `user:identifier:${identifier}`;
-  const cachedUserId = await this.redis.get(cacheKey);
-  
-  if (cachedUserId) {
-    // Fetch full user by ID to retain Mongoose methods like comparePassword
-    const cachedUser = await UserModel.findById(cachedUserId);
-    if (cachedUser) return cachedUser;
+  async findByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
+    const cacheKey = `user:identifier:${identifier}`;
+    const cachedUserId = await this.redis.get(cacheKey);
+
+    if (cachedUserId) {
+      // Fetch full user by ID to retain Mongoose methods like comparePassword
+      const cachedUser = await UserModel.findById(cachedUserId);
+      if (cachedUser) return cachedUser;
+    }
+
+    let user = await UserModel.findOne({ email: identifier, isDeleted: false });
+    if (!user) {
+      user = await UserModel.findOne({ username: identifier, isDeleted: false });
+    }
+
+    if (user && this.redis.client) {
+      await this.redis.setEx(cacheKey, (user._id as any).toString(), 60);
+    }
+
+    return user;
   }
-
-
-  let user = await UserModel.findOne({ email: identifier, isDeleted: false });
-  if (!user) {
-    user = await UserModel.findOne({ username: identifier, isDeleted: false });
-  }
-
-  if (user && this.redis.client) {
-    await this.redis.setEx(cacheKey, (user._id as any).toString(), 60);
-  }
-
-  return user;
-}
 
   async findByResetToken(token: string): Promise<IUserModel | null> {
     return await UserModel.findOne({ resetPasswordToken: token, isDeleted: false });
@@ -112,7 +110,7 @@ async findByEmailOrUsername(identifier: string): Promise<IUserModel | null> {
     const user = await UserModel.findByIdAndUpdate(
       new Types.ObjectId(id),
       { $set: data },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
     if (user && this.redis.client) {
       await this.redis.client.del(`user:${id}`);

@@ -27,7 +27,7 @@ export class Post {
     public status: 'active' | 'deleted',
     public isDeleted: boolean,
     public createdAt: Date,
-    public updatedAt: Date
+    public updatedAt: Date,
   ) {
     if (!imageUrls || imageUrls.length === 0) {
       throw new Error('Post must have at least one image');
@@ -46,7 +46,7 @@ export class Post {
       data.status || 'active',
       data.isDeleted || false,
       data.createdAt || new Date(),
-      data.updatedAt || new Date()
+      data.updatedAt || new Date(),
     );
   }
 }

@@ -7,7 +7,7 @@ export interface IAdminModel extends Document {
   password: string;
   role: string;
   isVerified: boolean;
-  resetPasswordToken?: string,
+  resetPasswordToken?: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -15,12 +15,12 @@ const adminSchema = new Schema<IAdminModel>(
   {
     adminName: { type: String, required: true, unique: true, index: true },
     email: { type: String, required: true, unique: true, index: true },
-    password: { type: String, required: true, },
+    password: { type: String, required: true },
     role: { type: String, default: 'admin' },
     isVerified: { type: Boolean, default: false },
     resetPasswordToken: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 adminSchema.pre('save', async function (next) {

@@ -1,5 +1,5 @@
 import jwt, { JwtPayload as DefaultJwtPayload } from 'jsonwebtoken';
-import { IUserModel } from '../infrastructure/model/user.model'; 
+import { IUserModel } from '../infrastructure/model/user.model';
 import { IAdminModel } from '../infrastructure/model/adminModel';
 import dotenv from 'dotenv';
 
@@ -12,41 +12,27 @@ interface JwtPayload extends DefaultJwtPayload {
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
-const ADMIN_ACCESS_TOKEN_SECRET= process.env.ADMIN_ACCESS_TOKEN_SECRET!
-const ADMIN_REFRESH_TOKEN_SECRET = process.env.ADMIN_REFRESH_TOKEN_SECRET!
-
+const ADMIN_ACCESS_TOKEN_SECRET = process.env.ADMIN_ACCESS_TOKEN_SECRET!;
+const ADMIN_REFRESH_TOKEN_SECRET = process.env.ADMIN_REFRESH_TOKEN_SECRET!;
 
 export const generateAccessToken = (user: IUserModel): string => {
-  return jwt.sign(
-    { id: user._id, email: user.email }, 
-    ACCESS_TOKEN_SECRET, 
-    { expiresIn: "15m" }
-  );
+  return jwt.sign({ id: user._id, email: user.email }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
 };
 
 export const generateAdminAccessToken = (admin: IAdminModel): string => {
-  return jwt.sign(
-    { id: admin._id, email: admin.email }, 
-    ADMIN_ACCESS_TOKEN_SECRET, 
-    { expiresIn: "15m" }
-  );
+  return jwt.sign({ id: admin._id, email: admin.email }, ADMIN_ACCESS_TOKEN_SECRET, {
+    expiresIn: '15m',
+  });
 };
 
-
 export const generateRefreshToken = (user: IUserModel): string => {
-  return jwt.sign(
-    { id: user._id, email: user.email }, 
-    REFRESH_TOKEN_SECRET, 
-    { expiresIn: '7d' }
-  );
+  return jwt.sign({ id: user._id, email: user.email }, REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
 };
 
 export const generateAdminRefreshToken = (admin: IAdminModel): string => {
-  return jwt.sign(
-    { id: admin._id, email: admin.email }, 
-    ADMIN_REFRESH_TOKEN_SECRET, 
-    { expiresIn: '7d' }
-  );
+  return jwt.sign({ id: admin._id, email: admin.email }, ADMIN_REFRESH_TOKEN_SECRET, {
+    expiresIn: '7d',
+  });
 };
 
 export const verifyAccessToken = (token: string): JwtPayload | null => {

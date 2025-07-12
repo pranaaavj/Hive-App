@@ -22,15 +22,18 @@ export class UserController {
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { identifier, password } = req.body;
-      const { accessToken, refreshToken, user } = await this.userService.login({ identifier, password });
-  
+      const { accessToken, refreshToken, user } = await this.userService.login({
+        identifier,
+        password,
+      });
+
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-  
+
       res.status(200).json({
         success: true,
         message: 'User logged in successfully',
@@ -39,14 +42,13 @@ export class UserController {
           id: user._id,
           username: user.username,
           email: user.email,
-          profilePicture:user.profilePicture
+          profilePicture: user.profilePicture,
         },
       });
     } catch (error) {
       next(error);
     }
   }
-  
 
   async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {

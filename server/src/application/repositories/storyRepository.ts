@@ -106,26 +106,26 @@ export class MongoStoryRespository implements StoryRepository {
     return story as IStoryDocument;
   }
   async getMyStories(userId: string): Promise<any | null> {
-    const user = await UserModel.findById(userId).select("username profilePicture");
-  
+    const user = await UserModel.findById(userId).select('username profilePicture');
+
     if (!user) {
-      throw new ApiError  ("User not found", 404);
+      throw new ApiError('User not found', 404);
     }
-  
+
     const stories = await StoryModel.find({
       userId: user._id,
-      expiresAt: { $gt: new Date() }
+      expiresAt: { $gt: new Date() },
     }).sort({ createdAt: 1 });
-  
+
     if (!stories.length) {
       return {
         userId: user._id,
         username: user.username,
         profilePicture: user.profilePicture,
-        stories: []
+        stories: [],
       };
     }
-  
+
     const formattedStories = stories.map((story) => ({
       _id: story._id,
       mediaUrl: story.mediaUrl,
@@ -133,7 +133,7 @@ export class MongoStoryRespository implements StoryRepository {
       createdAt: story.createdAt,
       isSeen: story.viewers.includes(new Types.ObjectId(userId)),
     }));
-  
+
     return {
       userId: user._id,
       username: user.username,
@@ -141,5 +141,4 @@ export class MongoStoryRespository implements StoryRepository {
       stories: formattedStories,
     };
   }
-  
 }

@@ -54,9 +54,9 @@ export class CommentService {
         userId: new Types.ObjectId(userAndPost?.userId),
         fromUser: new Types.ObjectId(userId),
         type: 'comment',
-        postId:new Types.ObjectId(postId),
+        postId: new Types.ObjectId(postId),
         message: `commented ${savedComment.content}`,
-        postImage: userAndPost?.imageUrls?.[0]
+        postImage: userAndPost?.imageUrls?.[0],
       });
       await this.postRepository.updateCommentCount(postId, 1);
       return savedComment;

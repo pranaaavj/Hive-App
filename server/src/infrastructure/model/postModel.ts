@@ -2,7 +2,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPostModel extends Document {
-  _id:mongoose.Types.ObjectId;
+  _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   imageUrls: string[];
   likes: mongoose.Types.ObjectId[];
@@ -26,7 +26,7 @@ const postSchema = new Schema<IPostModel>(
     status: { type: String, enum: ['active', 'deleted'], default: 'active' },
     isDeleted: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 postSchema.index({ userId: 1, createdAt: -1 });

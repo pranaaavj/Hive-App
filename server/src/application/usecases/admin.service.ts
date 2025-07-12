@@ -11,7 +11,6 @@ import {
 } from '../../utils/jwt';
 import { RedisClient } from '../../infrastructure/cache/redis';
 
-
 export class AdminService {
   private redis: RedisClient;
   constructor(private adminRepository: AdminRepository) {
@@ -46,12 +45,12 @@ export class AdminService {
         password: adminData.password,
       });
 
-      console.log(adminEntity,'adminEntity')
+      console.log(adminEntity, 'adminEntity');
       const newAdmin = await this.adminRepository.createNewAdmin(adminEntity);
       const token = jwt.sign({ adminId: newAdmin._id }, process.env.ADMIN_EMAIL_SECRET!, {
         expiresIn: '2m',
       });
-      console.log(token, 'token for the verification')
+      console.log(token, 'token for the verification');
       await sendVerificationEmail(newAdmin.email, token, 'register');
       return newAdmin;
     } catch (error) {
@@ -115,7 +114,7 @@ export class AdminService {
       const token = jwt.sign({ adminId: admin._id }, process.env.ADMIN_EMAIL_SECRET!, {
         expiresIn: '2m',
       });
-      console.log(token,'token for forget pass')
+      console.log(token, 'token for forget pass');
       await this.adminRepository.update(admin._id as string, { resetPasswordToken: token });
       await sendVerificationEmail(admin.email, token, 'forgot');
     } catch (error) {
@@ -157,12 +156,12 @@ export class AdminService {
       throw new ApiError('Failed to reset password', 500);
     }
   }
-  async logout(token:string):Promise<void>{
+  async logout(token: string): Promise<void> {
     try {
-      const decoded = jwt.verify(token,process.env.ADMIN_REFRESH_TOKEN_SECRET!) as {
-        id:string,
-        exp:number
-      }
+      const decoded = jwt.verify(token, process.env.ADMIN_REFRESH_TOKEN_SECRET!) as {
+        id: string;
+        exp: number;
+      };
       const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
       if (expiresIn > 0) {
         await this.redis.setEx(`blacklist:${token}`, 'true', expiresIn);

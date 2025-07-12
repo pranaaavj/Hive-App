@@ -23,7 +23,7 @@ export class Comment {
     public depth: number,
     public isDeleted: boolean,
     public createdAt: Date,
-    public updatedAt: Date
+    public updatedAt: Date,
   ) {
     if (!content || content.length > 500) {
       throw new Error('Invalid comment content');
@@ -40,7 +40,7 @@ export class Comment {
       data.depth || 0,
       data.isDeleted || false,
       data.createdAt || new Date(),
-      data.updatedAt || new Date()
+      data.updatedAt || new Date(),
     );
   }
 }

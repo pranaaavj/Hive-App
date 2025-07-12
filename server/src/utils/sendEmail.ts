@@ -15,11 +15,11 @@ const transporter = nodemailer.createTransport({
     user: process.env.SENDER_EMAIL,
     pass: process.env.EMAIL_PASS,
   },
-  pool: true,            // ✅ use connection pool
-  maxConnections: 5,     // max parallel connections
-  maxMessages: 100,      // max messages per connection
-  rateDelta: 1000,       // 1 second between messages (optional)
-  rateLimit: 5,          // no more than 5 messages/second
+  pool: true, // ✅ use connection pool
+  maxConnections: 5, // max parallel connections
+  maxMessages: 100, // max messages per connection
+  rateDelta: 1000, // 1 second between messages (optional)
+  rateLimit: 5, // no more than 5 messages/second
 });
 
 const sendEmail = async ({ to, subject, html }: EmailOptions): Promise<void> => {

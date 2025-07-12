@@ -8,7 +8,7 @@ export class AdminController {
   async registerAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { adminName, email, password } = req.body;
-      console.log(req.body,'body')
+      console.log(req.body, 'body');
       await this.adminService.register({ adminName, email, password });
       res.status(200).json({ success: true, message: 'new admin created' });
     } catch (error) {
@@ -54,76 +54,73 @@ export class AdminController {
     }
   }
 
-  async refreshToken(req:Request,res:Response,next:NextFunction):Promise<void>{
+  async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const token = req.cookies.refreshToken
-        console.log(token,'token')
-        if(!token) throw new ApiError('No Refresh Token',401)
-        const accessToken = await this.adminService.refreshToken(token)
-        res.status(200).json({
-            success:true,
-            message:'token refreshed successfully',
-            data:{accessToken}
-        })
+      const token = req.cookies.refreshToken;
+      console.log(token, 'token');
+      if (!token) throw new ApiError('No Refresh Token', 401);
+      const accessToken = await this.adminService.refreshToken(token);
+      res.status(200).json({
+        success: true,
+        message: 'token refreshed successfully',
+        data: { accessToken },
+      });
     } catch (error) {
-        next(error)
+      next(error);
     }
   }
-  async forgotPassword(req:Request,res:Response,next:NextFunction):Promise<void>{
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const{email} = req.body
-        await this.adminService.passwordResetEmail(email)
-        res.status(200).json({success:true,message:'password reset mail has been sent'})
-
+      const { email } = req.body;
+      await this.adminService.passwordResetEmail(email);
+      res.status(200).json({ success: true, message: 'password reset mail has been sent' });
     } catch (error) {
-        next(error)
-    }
-  }
-
-  async forgotVerifyEmail(req:Request,res:Response,next:NextFunction):Promise<void>{
-    try {
-        const{token} = req.params
-        console.log(token,' token from the forgotVerifyEmail')
-        const redirectUrl = await this.adminService.forgetVerifyEmail(token)
-        res.redirect(redirectUrl)
-    } catch (error) {
-        next(error)
+      next(error);
     }
   }
 
-  async resetPassword(req:Request,res:Response,next:NextFunction):Promise<void>{
+  async forgotVerifyEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const{token} = req.query
-        const{password} = req.body
-        if(typeof token !== 'string'){
-            throw new ApiError('Invalid token',400)
-        }
-        await this.adminService.resetPassword(token,password)
-        res.status(200).json({
-            success:true,
-            message:'Password has been reset successfully',
-    
-        })
+      const { token } = req.params;
+      console.log(token, ' token from the forgotVerifyEmail');
+      const redirectUrl = await this.adminService.forgetVerifyEmail(token);
+      res.redirect(redirectUrl);
     } catch (error) {
-        next(error)
+      next(error);
     }
   }
 
-  async logout(req:Request,res:Response,next:NextFunction):Promise<void>{
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const token = req.cookies.refreshToken
-       if (!token) {
+      const { token } = req.query;
+      const { password } = req.body;
+      if (typeof token !== 'string') {
+        throw new ApiError('Invalid token', 400);
+      }
+      await this.adminService.resetPassword(token, password);
+      res.status(200).json({
+        success: true,
+        message: 'Password has been reset successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const token = req.cookies.refreshToken;
+      if (!token) {
         throw new ApiError('No refresh token provided', 401);
       }
-      await this.adminService.logout(token)
-      res.clearCookie('adminRefreshToken')
-       res.status(200).json({
+      await this.adminService.logout(token);
+      res.clearCookie('adminRefreshToken');
+      res.status(200).json({
         success: true,
         message: 'Logout successful',
       });
     } catch (error) {
-       next(error);
+      next(error);
     }
   }
-
 }

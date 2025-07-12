@@ -1,14 +1,12 @@
-import { INotification } from "../../infrastructure/model/notification";
-import { NotificationRepository } from "../repositories/notificationRepository";
+import { INotification } from '../../infrastructure/model/notification';
+import { NotificationRepository } from '../repositories/notificationRepository';
 
 export class NotificationService {
-    constructor(
-        private notificationRepository: NotificationRepository
-    ) {}
+  constructor(private notificationRepository: NotificationRepository) {}
 
-    async getNotifications(userId: string) : Promise<INotification[]> {
-        const notifications = await this.notificationRepository.getNotifications(userId)
+  async getNotifications(userId: string): Promise<INotification[]> {
+    const notifications = await this.notificationRepository.getNotifications(userId);
 
-        return notifications
-    }
+    return notifications;
+  }
 }

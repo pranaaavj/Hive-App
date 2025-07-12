@@ -5,8 +5,10 @@ dotenv.config();
 
 export const connectDB = async () => {
   try {
-    if (mongoose.connection.readyState === 0) { // 0 = disconnected
-      const mongoUrl = process.env.MONGO_URI || 'mongodb://hive-app-mongo:27017/hive-app?replicaSet=rs0';
+    if (mongoose.connection.readyState === 0) {
+      // 0 = disconnected
+      const mongoUrl =
+        process.env.MONGO_URI || 'mongodb://hive-app-mongo:27017/hive-app?replicaSet=rs0';
       console.log(`Attempting to connect to MongoDB at: ${mongoUrl}`);
       // Wait for MongoDB to be ready (optional, for replica set)
       for (let i = 0; i < 10; i++) {
@@ -18,7 +20,7 @@ export const connectDB = async () => {
           return conn;
         } catch (err) {
           console.log(`Attempt ${i + 1}/10: MongoDB not ready, retrying in 2s...`);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
       throw new Error('MongoDB connection failed after retries');

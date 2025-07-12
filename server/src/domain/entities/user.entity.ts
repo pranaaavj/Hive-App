@@ -7,17 +7,17 @@ export interface IUser {
   password: string;
   role: string;
   isVerified: boolean;
-   profilePicture?: string; 
+  profilePicture?: string;
   resetPasswordToken?: string;
   isDeleted: boolean;
-  isOnline: boolean,
+  isOnline: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export interface UsernameProfile {
-  username: string,
-  profilePicture: string
+  username: string;
+  profilePicture: string;
 }
 
 export interface ProfileSummary {
@@ -47,7 +47,7 @@ export class User {
     public resetPasswordToken: string | undefined,
     public isDeleted: boolean,
     public createdAt: Date,
-    public updatedAt: Date
+    public updatedAt: Date,
   ) {
     if (!username || !email || !password) {
       throw new Error('Username, email, and password are required');
@@ -65,7 +65,7 @@ export class User {
       data.resetPasswordToken,
       data.isDeleted || false,
       data.createdAt || new Date(),
-      data.updatedAt || new Date()
+      data.updatedAt || new Date(),
     );
   }
 }

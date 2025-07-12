@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { ProfileSummary, User, UsernameProfile, } from '../../domain/entities/user.entity';
+import { ProfileSummary, User, UsernameProfile } from '../../domain/entities/user.entity';
 import { UserModel } from '../../infrastructure/model/user.model';
 import { RedisClient } from '../../infrastructure/cache/redis';
 import { SearchUsers } from '../../domain/entities/profileEntity';
@@ -7,18 +7,21 @@ import { SearchUsers } from '../../domain/entities/profileEntity';
 export interface ProfileRepository {
   updateProfileImage(userId: string, imageUrl: string): Promise<User | null>;
   findById(userId: string, reqUser: string): Promise<ProfileSummary | null>;
-  findByUsername(username: string): Promise<User | null>; 
+  findByUsername(username: string): Promise<User | null>;
   followUser(userId: string, followingUserId: string): Promise<ProfileSummary | null>;
   searchUsersByUsername(query: string): Promise<SearchUsers | null>;
   unfollowUser(userId: string, unfollowUserId: string): Promise<ProfileSummary | null>;
-  updateProfile(userId: string, updatedData: object) : Promise<ProfileSummary | null>
-  findFollowingUsers(userId: string) : Promise<ProfileSummary[] | null>
-  findFollowedUsers(userId: string) : Promise<ProfileSummary[] | null>
-  getMutualFollowStatus(userAId: string, userBId: string): Promise<{
+  updateProfile(userId: string, updatedData: object): Promise<ProfileSummary | null>;
+  findFollowingUsers(userId: string): Promise<ProfileSummary[] | null>;
+  findFollowedUsers(userId: string): Promise<ProfileSummary[] | null>;
+  getMutualFollowStatus(
+    userAId: string,
+    userBId: string,
+  ): Promise<{
     isFollowing: boolean;
     isFollowed: boolean;
   }>;
-  usernameProfile(userId: string) : Promise<UsernameProfile | null>
+  usernameProfile(userId: string): Promise<UsernameProfile | null>;
 }
 
 export class MongoProfileRepository implements ProfileRepository {
@@ -27,7 +30,6 @@ export class MongoProfileRepository implements ProfileRepository {
   constructor() {
     this.redis = new RedisClient();
   }
-
 
   async updateProfileImage(userId: string, imageUrl: string): Promise<User | null> {
     console.log(imageUrl);
@@ -45,7 +47,6 @@ export class MongoProfileRepository implements ProfileRepository {
   }
 
   async findById(userId: string, reqUser: string): Promise<ProfileSummary | null> {
-
     const cacheKey = `user:summary:${userId}`;
     const cached = await this.redis.get(cacheKey);
 
@@ -136,7 +137,7 @@ export class MongoProfileRepository implements ProfileRepository {
       { new: true },
     );
 
-    return user as ProfileSummary | null
+    return user as ProfileSummary | null;
   }
 
   async searchUsersByUsername(query: string): Promise<SearchUsers | null> {
@@ -152,59 +153,58 @@ export class MongoProfileRepository implements ProfileRepository {
       followers: user.followers.length,
     })) as SearchUsers | null;
   }
-  async updateProfile(userId: string, updatedData: object) :Promise<ProfileSummary | null> {
-    
-    const updatedUser = await UserModel.findByIdAndUpdate(userId, 
-      {$set: updatedData}, {new: true}
-    )
+  async updateProfile(userId: string, updatedData: object): Promise<ProfileSummary | null> {
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      { $set: updatedData },
+      { new: true },
+    );
 
     return updatedUser as ProfileSummary | null;
-    
   }
   async findFollowingUsers(userId: string): Promise<ProfileSummary[] | null> {
-    
     const user = await UserModel.findById(userId).populate({
-      path: "following",
-      select: "_id username profilePicture"
-    })
+      path: 'following',
+      select: '_id username profilePicture',
+    });
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
-    return user.following as unknown as ProfileSummary[] | null
-
+    return user.following as unknown as ProfileSummary[] | null;
   }
 
   async findFollowedUsers(userId: string): Promise<ProfileSummary[] | null> {
-    
     const user = await UserModel.findById(userId).populate({
-      path: "followers",
-      select: "_id username profilePicture"
-    })
+      path: 'followers',
+      select: '_id username profilePicture',
+    });
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
-    return user.followers as unknown as ProfileSummary[] | null
-
+    return user.followers as unknown as ProfileSummary[] | null;
   }
-  async getMutualFollowStatus(userAId: string, userBId: string): Promise<{
+  async getMutualFollowStatus(
+    userAId: string,
+    userBId: string,
+  ): Promise<{
     isFollowing: boolean; // A is following B
-    isFollowed: boolean;  // B is following A
+    isFollowed: boolean; // B is following A
   }> {
     const [userA, userB] = await Promise.all([
       UserModel.findById(userAId, { following: 1 }),
       UserModel.findById(userBId, { following: 1 }),
     ]);
-  
+
     if (!userA || !userB) return { isFollowing: false, isFollowed: false };
-  
+
     const isFollowing = userA.following.some((id) => id.equals(userBId)); // A ➝ B
-    const isFollowed = userB.following.some((id) => id.equals(userAId));  // B ➝ A
-  
+    const isFollowed = userB.following.some((id) => id.equals(userAId)); // B ➝ A
+
     return { isFollowing, isFollowed };
   }
   async usernameProfile(userId: string): Promise<UsernameProfile | null> {
-    return await UserModel.findById(userId).select("username profilePicture")
+    return await UserModel.findById(userId).select('username profilePicture');
   }
 }

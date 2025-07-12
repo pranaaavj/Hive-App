@@ -33,7 +33,7 @@ const userSchema = new Schema<IUserModel>(
     isDeleted: { type: Boolean, default: false },
     profilePicture: { type: String, default: '' },
     bio: { type: String, default: '' },
-    status: { type: Boolean, default: true},
+    status: { type: Boolean, default: true },
     postsCount: { type: Number, default: 0 },
     followers: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
     following: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],

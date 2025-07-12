@@ -37,14 +37,12 @@ export class AdminUserManagementController {
       // if(!userCount && !suspendedUser){
       //      throw new ApiError('no users fount and suspended user found',400)
       // }
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: 'total users and suspended user fetched',
-          userCount,
-          suspendedUser,
-        });
+      res.status(200).json({
+        success: true,
+        message: 'total users and suspended user fetched',
+        userCount,
+        suspendedUser,
+      });
     } catch (error) {
       next(error);
     }
@@ -62,7 +60,7 @@ export class AdminUserManagementController {
 
   async deletePost(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const {postId} = req.params;
+      const { postId } = req.params;
       const deleted = await this.adminUserManagementService.deletePost(postId);
       if (!deleted) {
         res.status(404).json({ success: false, message: 'Post not found' });
@@ -74,25 +72,27 @@ export class AdminUserManagementController {
     }
   }
 
-  async postCount(req:Request,res:Response,next:NextFunction):Promise<void>{
+  async postCount(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const {totalPosts} = await this.adminUserManagementService.postCount()
-      res.status(200).json({success:true,message:'Total post count fetched successfully',totalPosts})
+      const { totalPosts } = await this.adminUserManagementService.postCount();
+      res
+        .status(200)
+        .json({ success: true, message: 'Total post count fetched successfully', totalPosts });
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
-  async searchUser(req:Request,res:Response,next:NextFunction):Promise<void>{
+  async searchUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const q = String(req.query.q || "").trim();
-        if (!q) {
-         res.status(400).json({ success: false, message: "Query missing" });
-         return
+      const q = String(req.query.q || '').trim();
+      if (!q) {
+        res.status(400).json({ success: false, message: 'Query missing' });
+        return;
       }
-      const user = await this.adminUserManagementService.searchUser(q)
-      res.status(200).json({success:true,user})
+      const user = await this.adminUserManagementService.searchUser(q);
+      res.status(200).json({ success: true, user });
     } catch (error) {
-      next(error)
+      next(error);
     }
   }
 }

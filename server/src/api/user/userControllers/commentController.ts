@@ -16,7 +16,12 @@ export class CommentController {
         throw new ApiError('User not authenticated', 401);
       }
 
-      const comment = await this.commentService.createComment(postId, userId, content, parentCommentId);
+      const comment = await this.commentService.createComment(
+        postId,
+        userId,
+        content,
+        parentCommentId,
+      );
 
       res.status(201).json({
         success: true,
@@ -32,7 +37,11 @@ export class CommentController {
     try {
       const { postId } = req.params;
       const { page = 0, limit = 10 } = req.query;
-      const comments = await this.commentService.getCommentsByPostId(postId, Number(page), Number(limit));
+      const comments = await this.commentService.getCommentsByPostId(
+        postId,
+        Number(page),
+        Number(limit),
+      );
 
       res.status(200).json({
         success: true,
@@ -62,11 +71,9 @@ export class CommentController {
 
   deleteComment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-
       const userReq = req as RequestWithUser;
       const userId = userReq.user?.userId;
       const { commentId } = req.params;
-
 
       if (!userId) {
         throw new ApiError('User not authenticated', 401);
@@ -80,8 +87,8 @@ export class CommentController {
         data: {
           commentId,
           deletionType: deletedComment.deletionType,
-          comment: deletedComment.comment
-        }
+          comment: deletedComment.comment,
+        },
       });
     } catch (error) {
       next(error);

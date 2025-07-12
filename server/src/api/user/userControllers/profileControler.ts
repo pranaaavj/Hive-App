@@ -134,65 +134,59 @@ export class ProfileControler {
       next(error);
     }
   };
-  getFollowing = async (
+  getFollowing = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const reqUser = req.user?.userId;
+      if (!reqUser) {
+        throw new ApiError('user not authorised', 401);
+      }
+      const userId = req.query?.userId as string;
+
+      const followingUsers = await this.profileService.followingUsers(userId);
+
+      res.status(200).json(followingUsers);
+    } catch (error: any) {
+      next(
+        new ApiError(error.message || 'Failed to fetch following users', error.statusCode || 500),
+      );
+    }
+  };
+  getFollowers = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const reqUser = req.user?.userId;
+      if (!reqUser) {
+        throw new ApiError('user not authorised', 401);
+      }
+      const userId = req.query?.userId as string;
+
+      const followedUsers = await this.profileService.followedUsers(userId);
+
+      res.status(200).json(followedUsers);
+    } catch (error: any) {
+      next(
+        new ApiError(error.message || 'Failed to fetch followed users', error.statusCode || 500),
+      );
+    }
+  };
+  usernameAndProfile = async (
     req: RequestWithUser,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-
     try {
-      const reqUser = req.user?.userId
-      if(!reqUser) {
-        throw new ApiError("user not authorised", 401)
+      const validUser = req.user?.userId;
+      if (!validUser) {
+        throw new ApiError('user not authorised', 401);
       }
-      const userId = req.query?.userId as string
-      
-      const followingUsers = await this.profileService.followingUsers(userId)
-  
-        res.status(200).json(followingUsers)
-    } catch (error: any) {
-        next(new ApiError(error.message || "Failed to fetch following users", error.statusCode || 500))
-    }
+      const userId = req.params.userId || validUser;
+      const usernameProfile = await this.profileService.usernameAndProfile(userId);
 
-    
-  };
-  getFollowers = async (
-    req: RequestWithUser,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-
-    try {
-      const reqUser = req.user?.userId
-      if(!reqUser) {
-        throw new ApiError("user not authorised", 401)
+      if (!usernameProfile) {
+        throw new ApiError('User not found', 404);
       }
-      const userId = req.query?.userId as string
-      
-      const followedUsers = await this.profileService.followedUsers(userId)
-  
-        res.status(200).json(followedUsers)
-    } catch (error: any) {
-        next(new ApiError(error.message || "Failed to fetch followed users", error.statusCode || 500))
-    }
-
-    
-  };
-  usernameAndProfile = async(req: RequestWithUser, res: Response, next: NextFunction) : Promise<void> => {
-    try {
-      const validUser = req.user?.userId
-    if(!validUser) {
-      throw new ApiError("user not authorised", 401)
-    }
-    const userId = req.params.userId || validUser
-    const usernameProfile =  await this.profileService.usernameAndProfile(userId)
-
-    if(!usernameProfile) {
-      throw new ApiError("User not found", 404)
-    }
-    res.status(200).json(usernameProfile)
+      res.status(200).json(usernameProfile);
     } catch (error) {
-      next(error)
+      next(error);
     }
-  }
+  };
 }

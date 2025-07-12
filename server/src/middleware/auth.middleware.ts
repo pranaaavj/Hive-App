@@ -5,9 +5,7 @@ import { ApiError } from '../utils/apiError';
 import { RequestWithUser } from '../types/RequestWithUser';
 
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-
   try {
-
     const authHeader = req.headers.authorization;
 
     const token = req.headers.authorization?.split(' ')[1];
@@ -30,6 +28,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
     (req as RequestWithUser).user = { userId: payload.id, email: payload.email };
     next();
   } catch (error) {
-    next(error instanceof ApiError ? error   : new ApiError('Authentication failed', 401));
+    next(error instanceof ApiError ? error : new ApiError('Authentication failed', 401));
   }
 };
